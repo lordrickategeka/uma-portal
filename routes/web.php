@@ -9,11 +9,17 @@ use App\Http\Controllers\MembersController;
 use App\Http\Controllers\MembershipCategoryController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\PaymentsController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PlansController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SubscriptionsController;
 use App\Http\Controllers\TransactionsController;
+use App\Http\Controllers\UserManagerController;
 use App\Http\Controllers\UserProfileController;
-use App\Models\Order;
+use App\Http\Controllers\Auth\VerificationController;
+use App\Mail\welcomeNewMemberEmail;
+use App\Models\User;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -24,7 +30,7 @@ Route::get('/portal', function () {
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register']);
 
-Auth::routes();
+Auth::routes(['verify' => true]);
 
 // web pages - Guest pages 
 Route::get('/', [App\Http\Controllers\WebPagesController::class, 'index'])->name('home.page');
@@ -65,10 +71,20 @@ Route::get('/payments/error', function () {
 
 
 
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return redirect('/home'); // or any other route
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
+Route::get('email/verify', function () {
+    return view('auth.verify');
+})->middleware(['auth'])->name('verification.notice');
+
 // ==============================================================================================================
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
     // post, categories, branches 
     Route::get('/all_posts', [App\Http\Controllers\BlogsController::class, 'allPosts'])->name('posts.all');
     Route::get('/posts/create', [App\Http\Controllers\BlogsController::class, 'create'])->name('post.create');
@@ -78,7 +94,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/posts/{blog}', [App\Http\Controllers\BlogsController::class, 'update'])->name('post.update');
 
     Route::delete('/posts/{blog}', [App\Http\Controllers\BlogsController::class, 'destroy'])->name('post.destroy');
-   
+
     Route::resource('categories', CategoryController::class);
     Route::resource('branches', BranchesController::class);
 
@@ -107,11 +123,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('payment/{order}/process', [PaymentsController::class, 'processPayment'])->name('payment.process');
     Route::get('payment/success/{order}', [PaymentsController::class, 'paymentSuccess'])->name('payment.success');
     Route::get('payment/failed/{order}', [PaymentsController::class, 'paymentFailed'])->name('payment.failed');
-    
+
     Route::post('/payment', [PaymentsController::class, 'subscriptionPayment'])->name('payment.subscription');
     Route::get('/callback', [PaymentsController::class, 'handleCallback'])->name('payment.callback');
     Route::get('/handleIPN', [PaymentsController::class, 'handleIPN'])->name('payment.handleIPN');
-    
+
     // upgrade plan
     Route::get('/plans/upgrade/{plan_id}', [PlansController::class, 'upgrade'])->name('plans.upgrade');
 
@@ -123,5 +139,16 @@ Route::middleware(['auth'])->group(function () {
 
     // members
     Route::resource('/members', MembersController::class);
-    
+
+    // manage user
+    Route::resource('roles', RoleController::class);
+    Route::resource('permissions', PermissionController::class);
+
+    Route::resource('permissions', PermissionController::class)->except(['show']);
+    Route::get('permissions/{permission}/assign', [PermissionController::class, 'assignForm'])->name('permissions.assign.form');
+    Route::post('permissions/{permission}/assign', [PermissionController::class, 'assignToRole'])->name('permissions.assign');
+
+    Route::get('users', [UserManagerController::class, 'index'])->name('users.index');
+    Route::get('users/{user}/edit', [UserManagerController::class, 'edit'])->name('users.edit');
+    Route::put('users/{user}', [UserManagerController::class, 'update'])->name('users.update');
 });

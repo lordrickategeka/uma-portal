@@ -232,7 +232,8 @@
                                             </div>
                                             <div class="col-md-6 mb-3">
                                                 <label>Annual Practicing License/Student Admission Letter</label>
-                                                <input type="file" name="license_document" class="form-control license-field">
+                                                <input type="file" name="license_document"
+                                                    class="form-control license-field">
                                                 <small class="text-muted">Required for registered doctors/medical students.
                                                     Max 10 MB.</small>
                                             </div>
@@ -248,12 +249,13 @@
                                                 <label>Mode of Initial Payment*</label>
                                                 <select name="payment_mode" class="form-select required">
                                                     <option value="">Select Payment Method</option>
-                                                    <option value="Mobile Money"
-                                                        {{ old('payment_method') == 'Mobile Money' ? 'selected' : '' }}>
-                                                        Mobile Money</option>
-                                                    <option value="Bank Transfer"
-                                                        {{ old('payment_method') == 'Bank Transfer' ? 'selected' : '' }}>
-                                                        Bank Transfer</option>
+                                                    @foreach ($payment_methods as $payment_method)
+                                                        <option value="{{ $payment_method->id }}"
+                                                            data-name="{{ $payment_method->name }}"
+                                                            {{ old('payment_mode') == $payment_method->id ? 'selected' : '' }}>
+                                                            {{ $payment_method->name }}
+                                                        </option>
+                                                    @endforeach
                                                 </select>
                                             </div>
                                             <div class="col-md-6 mb-3">
@@ -310,7 +312,7 @@
                 }
 
                 // Show UMDPC field for doctors
-                if (value === 'Medical Student' ||value === 'Medical Officer' || value === 'Specialist' || value === 'Intern Doctor') {
+                if (value === 'Medical Student' || value === 'Medical Officer' || value === 'Specialist') {
                     umdpcField.classList.add('required');
                     licenseField.classList.add('required');
                 } else {
@@ -324,7 +326,10 @@
             const paymentPhone = document.querySelector('.payment-phone');
 
             paymentSelect.addEventListener('change', function() {
-                if (this.value === 'Mobile Money') {
+                const selectedOption = this.options[this.selectedIndex];
+                const methodName = selectedOption.dataset.name;
+
+                if (methodName === 'Mobile Money') {
                     paymentPhone.classList.add('required');
                     paymentPhone.parentElement.style.display = 'block';
                 } else {

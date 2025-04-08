@@ -16,6 +16,9 @@ use App\Models\User;
 use App\Models\MembershipCategory;
 use App\Mail\welcomeNewMemberEmail;
 use App\Models\Branch;
+use App\Models\PaymentMethod;
+use App\Models\UserPaymentMethod;
+use Spatie\Permission\Models\Role;
 
 class RegisterController extends Controller
 {
@@ -31,6 +34,7 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         $rules = [
+            // first step
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -42,6 +46,8 @@ class RegisterController extends Controller
             'address' => ['required', 'string'],
             'next_of_kin' => ['nullable', 'string'],
             'next_of_kin_phone' => ['nullable', 'string'],
+
+            // second step
             'uma_branch' => 'required|exists:branches,name',
             'employer' => ['nullable', 'string'],
             'category' => ['required', 'string'],
@@ -50,9 +56,9 @@ class RegisterController extends Controller
             'referee_phone1' => ['required', 'string'],
             'referee_phone2' => ['nullable', 'string'],
 
-            'photo' => ['nullable', 'image', 'max:10240'], // 10MB Max
-            'signature' => ['nullable', 'image', 'max:10240'],
-            'national_id' => ['required', 'image', 'max:10240'],
+            'photo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf,doc,docx', 'max:10240'], // 10MB Max
+            'signature' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf,doc,docx', 'max:10240'],
+            'national_id' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf,doc,docx', 'max:10240'],
 
             'payment_mode' => ['required', 'string'],
         ];
@@ -63,9 +69,9 @@ class RegisterController extends Controller
                 $rules['specialization'] = ['required', 'string'];
             }
 
-            if (in_array($data['category'], ['Medical Student', 'Medical Officer', 'Specialist', 'Intern Doctor'])) {
+            if (in_array($data['category'], ['Medical Student', 'Medical Officer', 'Specialist'])) {
                 $rules['umdpc_number'] = ['required', 'string'];
-                $rules['license_document'] = ['required', 'image', 'max:10240'];
+                $rules['license_document'] = ['required', 'file', 'mimes:jpg,jpeg,png,pdf,doc,docx', 'max:10240'];
             }
         }
 
@@ -76,7 +82,6 @@ class RegisterController extends Controller
 
         return Validator::make($data, $rules);
     }
-
 
     public function register(Request $request)
     {
@@ -93,10 +98,16 @@ class RegisterController extends Controller
 
             Log::info('User registered successfully', ['user_id' => $user->id, 'email' => $user->email]);
 
-            $this->guard()->login($user);
+            // Flash the success message to the session
+            $message = "Welcome to the UMA portal, your login credentials are as below: <br>" .
+                "Email: " . $user->email . "<br>" .
+                "Password: " . $user->temp_password . "<br>" .
+                "These credentials have also been sent to your email (" . $user->email . ").<br>" .
+                "Please login for further proceedings.";
 
-            return $this->registered($request, $user)
-                ?: redirect($this->redirectTo);
+            // Redirect to the portal with the success message
+            return redirect()->route('login')
+                ->with('status', ['type' => 'success', 'message' => $message]);
         } catch (\Exception $e) {
             Log::error('Registration failed', [
                 'error' => $e->getMessage(),
@@ -108,7 +119,6 @@ class RegisterController extends Controller
                 ->withErrors(['registration_error' => 'Registration failed: ' . $e->getMessage()]);
         }
     }
-
 
     protected function create(array $data)
     {
@@ -123,7 +133,11 @@ class RegisterController extends Controller
                 'last_name' => $data['last_name'],
                 'email' => $data['email'],
                 'password' => Hash::make($password),
+                'temp_password' => $password,
             ]);
+
+            $memberRole = Role::firstOrCreate(['name' => 'member']);
+            $user->assignRole($memberRole);
 
             // Send the generated password via email
             Mail::to($user->email)->send(new welcomeNewMemberEmail($user, $password));
@@ -155,7 +169,7 @@ class RegisterController extends Controller
             // License is conditional based on category
             if (in_array($data['category'], ['Medical Officer', 'Specialist', 'Intern Doctor'])) {
                 if (isset($data['license_document']) && $data['license_document']->isValid()) {
-                    $licensePath = $data['license']->store('licenses', 'public');
+                    $licensePath = $data['license_document']->store('licenses', 'public');
                 } else {
                     throw new \Exception('License upload failed');
                 }
@@ -194,22 +208,22 @@ class RegisterController extends Controller
 
             // 5. Create payment record
             $paymentInfo = [
-                'payment_mode' => $data['payment_mode'],
-                'payment_phone' => $data['payment_phone'] ?? null,
-                // Add other payment fields as needed
+                'user_id' => $user->id,
+                'payment_method_id' => $data['payment_mode'], // the selected mode from the form
+                'account_number' => $data['payment_phone'] ?? null, // Mobile number used to send money
+                'is_default' => true,
             ];
+            UserPaymentMethod::create($paymentInfo);
 
             // Log the profile data before saving
             // Log::info('Creating user profile', ['user_id' => $user->id, 'profile_data' => $profileData]);
+            // 6. Save the profile
             if ($user) {
                 $profile = $user->profile()->create($profileData);
                 Log::info('Creating user profile', ['user_id' => $user->id, 'profile_data' => $profileData]);
             } else {
                 throw new \Exception('User model was not created');
             }
-
-            // 6. Save the profile
-            $profile = $user->profile()->create($profileData);
 
             // 7. Create payment record (assuming you have a payment model)
             // $user->payments()->create($paymentInfo);
@@ -241,6 +255,7 @@ class RegisterController extends Controller
     {
         $membershipCategories = MembershipCategory::all();
         $branches = Branch::all();
-        return view('auth.register', compact('membershipCategories', 'branches'));
+        $payment_methods = PaymentMethod::all();
+        return view('auth.register', compact('membershipCategories', 'branches', 'payment_methods'));
     }
 }

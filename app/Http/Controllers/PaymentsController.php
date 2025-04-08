@@ -100,7 +100,7 @@ class PaymentsController extends Controller
         //     $order = $existingOrder;
         //     Log::info("Existing pending order found: " . $order->id);
         // } else {
-        $totalAmount = $plan->price + 2579;  // Including service fee
+        $totalAmount = $plan->price;  // Including service fee
         $merchantReference = "SUB-" . time() . "-" . rand(1000, 9999);
 
         // Fetch default payment method
@@ -140,7 +140,7 @@ class PaymentsController extends Controller
             "redirect_mode" => "TOP_WINDOW",
             "notification_id" => config('pesapal.notification_id', 'fa0578c5-d76f-4f81-bdb6-dc153b76cef7'),
             "cancellation_url" => route('subscriptions.index'),
-            "branch" => "UMA - HQ",
+            "branch" => $user->profile->uma_branch,
             "billing_address" => [
                 "email_address" => $user->email,
                 "phone_number" => $user->profile->phone,
@@ -148,7 +148,7 @@ class PaymentsController extends Controller
                 "first_name" => $user->first_name,
                 "middle_name" => "",
                 "last_name" => $user->last_name ?? '',
-                "line_1" => 'kampala,256' ?? '',
+                "line_1" => $user->profile->address,
                 "line_2" => "",
                 "city" => 'kampala' ?? '',
                 "state" => "",
@@ -156,6 +156,8 @@ class PaymentsController extends Controller
                 "zip_code" => "",
             ]
         ];
+
+        // dd($paymentData);
 
         // Add split payment details if needed
         if (config('pesapal.use_split_payment', false)) {

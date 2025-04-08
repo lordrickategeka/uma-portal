@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             UserProfilesTableSeeder::class,
             PlansTableSeeder::class,
             UserPlansTableSeeder::class,
+            RolesAndPermissionsSeeder::class,
             PaymentMethodsTableSeeder::class,
             UserPaymentMethodsTableSeeder::class,
             OrdersTableSeeder::class,

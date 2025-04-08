@@ -9,7 +9,8 @@
         "flutterwavedev/flutterwave-v3": "^1.0",
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.9",
-        "laravel/ui": "^4.6"
+        "laravel/ui": "^4.6",
+        "spatie/laravel-permission": "^6.16"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.5",

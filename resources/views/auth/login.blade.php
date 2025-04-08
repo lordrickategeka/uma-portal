@@ -4,7 +4,24 @@
         <div class="authentication-wrapper authentication-basic container-p-y">
             <div class="authentication-inner">
                 <div class="row justify-content-center">
+
+                    @if (session('status'))
                     <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                        <div class="alert alert-success"
+                                            style="background-color: green; color: white; padding: 15px; border-radius: 5px;">
+                                            {!! session('status')['message'] !!}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @else
+                        .
+                        @endif
+                        <div class="col-md-6">
                         <!-- Register Card -->
                         <div class="card">
                             <div class="card-body">

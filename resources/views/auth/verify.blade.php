@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.guest')
 
 @section('content')
 <div class="container">
@@ -13,12 +13,19 @@
                             {{ __('A fresh verification link has been sent to your email address.') }}
                         </div>
                     @endif
+                    
+                    @if (session('success'))
+                        <div class="alert alert-success" role="alert">
+                            {{ session('success') }}
+                        </div>
+                    @endif
 
-                    {{ __('Before proceeding, please check your email for a verification link.') }}
-                    {{ __('If you did not receive the email') }},
+                    <p>{{ __('Before proceeding, please check your email for a verification link.') }}</p>
+                    <p>{{ __('The link will verify your email address and allow you to access your account.') }}</p>
+                    <p>{{ __('If you did not receive the email') }},
                     <form class="d-inline" method="POST" action="{{ route('verification.resend') }}">
                         @csrf
-                        <button type="submit" class="btn btn-link p-0 m-0 align-baseline">{{ __('click here to request another') }}</button>.
+                        <button type="submit" class="btn btn-link p-0 m-0 align-baseline">{{ __('click here to request another') }}</button>.</p>
                     </form>
                 </div>
             </div>
