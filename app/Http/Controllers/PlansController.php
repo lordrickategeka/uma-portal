@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InstallmentPlan;
 use App\Models\MembershipCategory;
 use App\Models\Plan;
+use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -88,9 +91,59 @@ class PlansController extends Controller
         return redirect()->route('plans.index')->with('error', 'Plan not found.');
     }
 
-    public function subscribe(Plan $plan)
+   
+    public function subscribe(Request $request, $plan_id)
     {
-        return redirect()->route('payment.page', ['plan' => $plan->id]);
+        $plan = Plan::findOrFail($plan_id);
+        $user = Auth::user();
+        $installmentOption = $request->input('installment_option');
+        
+        // Check if the plan is a life membership plan
+        $isLifeMembership = 
+            $plan->membershipCategory->name === 'life' || 
+            strtolower($plan->name) === 'life membership';
+            
+        // If installment option is selected and it's a life membership
+        if ($isLifeMembership && $installmentOption && $installmentOption !== 'full') {
+            $numberOfInstallments = (int)$installmentOption;
+            $amountPerInstallment = ceil($plan->price / $numberOfInstallments);
+            
+            // Create installment plan
+            $installmentPlan = InstallmentPlan::create([
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'total_amount' => $plan->price,
+                'amount_per_installment' => $amountPerInstallment,
+                'total_installments' => $numberOfInstallments,
+                'paid_installments' => 0,
+                'remaining_amount' => $plan->price,
+                'status' => 'pending',
+                'next_payment_date' => Carbon::now()->addDays(30),
+            ]);
+            
+            // Create first transaction for the first installment
+            $transaction = Transaction::create([
+                'user_id' => $user->id,
+                'installment_plan_id' => $installmentPlan->id,
+                'plan_id' => $plan->id,
+                'amount' => $amountPerInstallment,
+                'status' => 'pending',
+                'reference_number' => 'INST-' . time() . '-' . rand(1000, 9999),
+                'installment_number' => 1
+            ]);
+            
+            // Redirect to payment page with the transaction
+            return redirect()->route('payment.page', [
+                'plan' => $plan->id,
+                'transaction_id' => $transaction->id
+            ]);
+        }
+        
+        // For regular subscriptions or full payments
+        return redirect()->route('payment.page', [
+            'plan' => $plan->id,
+            'installment_option' => $installmentOption
+        ]);
     }
 
     public function upgrade($planId)

@@ -3,20 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Blog extends Model
 {
     protected $fillable = [
-        'title', 
+        'title',
         'post_type',
-        'slug', 
-        'content', 
+        'slug',
+        'content',
         'branch_id',
-        'image', 
-        'author_id', 
-        'status', 
-        'published_at', 
-        'views', 
+        'image',
+        'author_id',
+        'status',
+        'published_at',
+        'views',
+        'notification_sent',
+    ];
+
+    protected $casts = [
+        'published_at' => 'datetime',
+        'notification_sent' => 'boolean',
     ];
 
     public function categories()
@@ -39,23 +46,55 @@ class Blog extends Model
         return $this->belongsToMany(Tag::class);
     }
 
-    // public function images()
-    // {
-    //     return $this->hasMany(Image::class);  // Adjust as per your relationship
-    // }
+    public function getSlugAttribute()
+    {
+        return Str::slug($this->title);
+    }
 
-    // public function comments()
-    // {
-    //     return $this->hasMany(Comment::class);  // Assuming you have a Comment model
-    // }
+    public function event()
+    {
+        return $this->hasOne(Event::class);
+    }
 
-    // Optionally, you can add a `comments_count` attribute to optimize for performance:
-    // protected $appends = ['comments_count'];
+    // Scope a query to only include published posts.
+    public function scopePublished($query)
+    {
+        return $query->where('status', 'published')
+                    ->whereNotNull('published_at')
+                    ->where('published_at', '<=', now());
+    }
 
-    // public function getCommentsCountAttribute()
-    // {
-    //     return $this->comments()->count();
-    // }
+    // Scope a query to only include posts published within the last two weeks.
+    public function scopeRecentlyPublished($query)
+    {
+        return $query->where('status', 'published')
+                    ->whereNotNull('published_at')
+                    ->where('published_at', '>=', now()->subWeeks(2))
+                    ->where('published_at', '<=', now());
+    }
 
+    // Scope a query to only include posts that need notifications.
+    public function scopeNeedsNotification($query)
+    {
+        return $query->where('status', 'published')
+                    ->whereNotNull('published_at')
+                    ->where('published_at', '>=', now()->subWeeks(2))
+                    ->where('published_at', '<=', now())
+                    ->where('notification_sent', false);
+    }
 
+    public function scopePosts($query)
+    {
+        return $query->where('post_type', 'post');
+    }
+
+    public function scopeEvents($query)
+    {
+        return $query->where('post_type', 'event');
+    }
+
+    public function getExcerpt($length = 150)
+    {
+        return Str::limit(strip_tags($this->content), $length);
+    }
 }

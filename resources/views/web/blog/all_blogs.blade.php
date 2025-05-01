@@ -41,8 +41,8 @@
                             </span>
                         </div>
                         <h5>
-                            <a href="{{ route('blog.show',$article->id) }}" class="blog-heading">
-                                {{ $article->title }}
+                            <a href="{{ route('blog.show', ['id' => $article->id, 'slug' => Str::slug($article->title)]) }}">
+                                {{ \Illuminate\Support\Str::words($article->title, 5) }}
                             </a>
                         </h5>
                         @if ($article->tags->count())
@@ -85,8 +85,16 @@
                 <div class="subscribe__one-title text-center">
                     <h2>Stay Connected! Subscribe For <span>The Latest Updates</span></h2>
                 </div>
-                <form action="#" class="subscribe__one-form">
-                    <input type="email" placeholder="Enter Your Email">
+                @error('email')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                    
+                    <form action="{{ route('subscription.submit') }}" class="subscribe__one-form" method="POST">
+                        @csrf
+                    <input type="email" name="email" value="{{ old('email') }}" placeholder="Enter Your Email">
+                    
                     <button class="btn-one" type="submit">Subscribe now</button>
                 </form>
             </div>

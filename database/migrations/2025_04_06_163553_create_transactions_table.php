@@ -19,12 +19,15 @@ return new class extends Migration
             $table->string('name');
             $table->string('phone');
             $table->string('status')->default('pending');
+            $table->string('payment_method')->nullable();
             $table->string('payment_link')->nullable();
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('plan_id')->nullable()->constrained()->onDelete('cascade');
             $table->json('payment_data')->nullable();
+            $table->string('purpose')->nullable(); // 'installment', 'full_payment', etc.
+            $table->foreignId('installment_plan_id')->nullable()->constrained()->onDelete('cascade');
+            $table->integer('installment_number')->nullable();
             $table->timestamps();
-            
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
         });
     }
 

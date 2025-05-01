@@ -10,7 +10,7 @@ class PermissionController extends Controller
 {
     public function index()
     {
-        $permissions = Permission::all();
+        $permissions = Permission::latest()->paginate(10);
         return view('dashboard.permissions.index', compact('permissions'));
     }
 

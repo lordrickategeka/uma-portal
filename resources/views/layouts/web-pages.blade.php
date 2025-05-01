@@ -73,26 +73,29 @@
                             <ul id="mobilemenu">
                                 <li><a href="/">Home</a></li>
                                 <li class="menu-item-has-children">
-                                    <a href="#about-us">About us</a>
+                                    <a href="#about-us">About us <i class="fas fa-angle-up"></i></a>
                                     <ul class="sub-menu">
+                                        <li><a href="{{ url('#') }}">Our History</a></li>
                                         <li><a href="{{ url('#') }}">Our Partners</a></li>
+                                        <li><a href="{{ url('#') }}">Testimonial</a></li>
+                                        <li><a href="{{ url('#') }}">Portfolio</a></li>
                                     </ul>
                                 </li>
                                 <li><a href="{{ url('https://umasacco.com/') }}" target="_blank">UMA SACCO</a></li>
 
                                 <li class="menu-item-has-children">
-                                    <a href="#">UMA Membership<i class="fas fa-angle-right"></i></a>
+                                    <a href="#">UMA Membership <i class="fas fa-angle-up"></i></a>
                                     <ul class="sub-menu">
-                                        <li> <a href="£">More Details</a> </li>
+                                        <li> <a href="#">More Details</a> </li>
                                         <li> <a href="{{ url('portal') }}" target="_blank">UMA Portal</a> </li>
                                     </ul>
                                 </li>
 
-                                <li><a href="{{ url('#') }}">CPD</a></li>
+                                <li><a href="{{ route('cpd.page') }}">CPD</a></li>
                                 <li><a href="{{ url('#') }}">Events</a></li>
 
                                 <li><a href="{{ route('blogs.index') }}">News</a></li>
-                                <li><a href="contact.html">Contact Us</a></li>
+                                <li><a href="{{ route('contact.page') }}">Contact Us</a></li>
                             </ul>
                         </div>
                     </div>
@@ -117,18 +120,71 @@
                             </div>
                             <div class="need-help">
                                 @auth
-                                <div class="need-help-icon"><i class="flaticon-user-account"></i></div>
-                                <div class="need-help-icon-txt">
-                                    <a href="{{route('home')}}">Dashboard</a>
-                                    {{-- <span>Call Us Anytime</span>  --}}
-                                </div>
+                                    <ul class="nav">
+                                        <li class="nav-item">
+                                            <a href="{{ url('/home') }}" class="nav-link">
+                                                <i class="fal fa-tachometer-alt"></i> Dashboard
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="{{ route('logout') }}"
+                                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                                <i class="fal fa-sign-out-alt"></i> Logout
+                                            </a>
+                                            <form id="logout-form" action="{{ route('logout') }}" method="POST">
+                                                @csrf
+                                            </form>
+                                        </li>
+                                    </ul>
                                 @else
-                                <div class="need-help-icon"><i class="flaticon-user-account"></i></div>
-                                <div class="need-help-icon-txt">
-                                    <a href="{{route('login')}}">Account</a>
-                                </div>
+                                    <ul class="nav">
+                                        <li class="nav-item">
+                                            <a href="{{ url('/login') }}" class="nav-link">
+                                                <i class="fal fa-sign-in-alt"></i> Login
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ url('/register') }}" class="nav-link">
+                                                <i class="fal fa-user-plus"></i> Register
+                                            </a>
+                                        </li>
+                                    </ul>
                                 @endauth
                             </div>
+
+                            <style>
+                                .need-help .nav {
+                                    display: flex;
+                                    justify-content: flex-start;
+                                    list-style: none;
+                                    padding: 0;
+                                    margin: 0;
+                                }
+
+                                .need-help .nav-item {
+                                    margin-right: 15px;
+                                }
+
+                                .need-help .nav-link {
+                                    display: flex;
+                                    align-items: center;
+                                    text-decoration: none;
+                                    color: #000;
+                                    font-size: 14px;
+                                    /* Set the font size to 14px */
+                                }
+
+                                .need-help .nav-link i {
+                                    margin-right: 5px;
+                                }
+
+                                .need-help .nav-link:hover {
+                                    text-decoration: underline;
+                                }
+                            </style>
+
+
+
                             <!-- sidebar Menu Start -->
                             <div class="header__area-menubar-right-sidebar-popup home-three">
                                 <div class="sidebar-close-btn"> <i class="fal fa-times"></i> </div>
@@ -247,19 +303,20 @@
                                             </div>
                                         </li>
 
-                                        <li class="responsive-sidebar-menu-list__item"> <a href="£"
+                                        <li class="responsive-sidebar-menu-list__item"> <a href="#"
                                                 class="responsive-sidebar-menu-list__link">
                                                 CPD
                                             </a> </li>
-                                        <li class="responsive-sidebar-menu-list__item"> <a href="£"
+                                        <li class="responsive-sidebar-menu-list__item"> <a href="#"
                                                 class="responsive-sidebar-menu-list__link">
                                                 Events
                                             </a> </li>
-                                        <li class="responsive-sidebar-menu-list__item"> <a href="{{ route('blogs.index') }}"
+                                        <li class="responsive-sidebar-menu-list__item"> <a
+                                                href="{{ route('blogs.index') }}"
                                                 class="responsive-sidebar-menu-list__link">
                                                 News
                                             </a> </li>
-                                        <li class="responsive-sidebar-menu-list__item"> <a href="£"
+                                        <li class="responsive-sidebar-menu-list__item"> <a href="#"
                                                 class="responsive-sidebar-menu-list__link">
                                                 Contact Us
                                             </a> </li>
@@ -282,21 +339,38 @@
                 <div class="footer__three-widget">
                     <div class="footer__three-widget-about">
                         <a href="#"><img src="assets/img/logo-5.png" alt=""></a>
-                        <p>We delivering innovative solutions that drive sustainable growth and success for you</p>
-                        <form action="#">
-                            <input type="email" placeholder="Email Address">
+                        <p>By joining UMA, you Become part of an extensive network of medical professionals committed to
+                            excellence in healthcare.
+                        </p>
+                        @if (session('success'))
+                            <div class="alert alert-success">
+                                {{ session('success') }}
+                            </div>
+                        @endif
+                        <form action="{{ route('subscription.submit') }}" method="POST">
+                            @csrf
+                            <small class="form-text">We'll never share your email with anyone else.</small>
+                            <input type="email" class="@error('email') is-invalid @enderror" id="email" name="email" placeholder="your@email.com" value="{{ old('email') }}" required>
+                            @error('email')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
                             <button type="submit"> <i class="fas fa-arrow-right"></i> </button>
                         </form>
                     </div>
+                   
                 </div>
                 <div class="footer__three-widget">
                     <h5>Quick Link</h5>
                     <div class="footer__three-widget-solution">
                         <ul>
-                            <li><a href="about.html">About Us</a></li>
-                            <li><a href="service.html">Service</a></li>
-                            <li><a href="faq.html">FAQ</a></li>
-                            <li><a href="blog-standard.html">Blog</a></li>
+                            <li><a href="#">About Us</a></li>
+                            <li><a href="{{ url('portal') }}">Web-Portal</a></li>
+                            <li><a href="#">Help Center</a></li>
+                            <li><a href="#">Events</a></li>
+                            <li><a href="{{ route('blogs.index') }}">News</a></li>
+                            <li><a href="#">FAQ</a></li>
                         </ul>
                     </div>
                 </div>
@@ -305,20 +379,24 @@
                     <div class="footer__three-widget-solution">
                         <ul>
                             <li>
-                                <a href="service-details.html"> <i class="far fa-chevron-double-right"></i> Retirement
-                                    Planning </a>
+                                <a href="#"> <i class="far fa-chevron-double-right"></i>
+                                    Advocating for Doctors' Welfare
+                                </a>
                             </li>
                             <li>
-                                <a href="service-details.html"> <i class="far fa-chevron-double-right"></i> Digital
-                                    Marketing </a>
+                                <a href="#"> <i class="far fa-chevron-double-right"></i>
+                                    Strengthening Public Health Systems.
+                                </a>
                             </li>
                             <li>
-                                <a href="service-details.html"> <i class="far fa-chevron-double-right"></i> App
-                                    Development </a>
+                                <a href="service-details.html"> <i class="far fa-chevron-double-right"></i>
+                                    Continuous Medical Education (CME) & Training.
+                                </a>
                             </li>
                             <li>
-                                <a href="service-details.html"> <i class="far fa-chevron-double-right"></i> Investment
-                                    Advisory </a>
+                                <a href="service-details.html"> <i class="far fa-chevron-double-right"></i>
+                                    Upholding Medical Ethics & Patient Safety.
+                                </a>
                             </li>
                         </ul>
                     </div>

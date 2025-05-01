@@ -23,6 +23,7 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();  // Timestamp for when the blog is published
             $table->integer('views')->default(0);  // View counter for the blog
             $table->string('post_type')->default('post');
+            $table->boolean('notification_sent')->default(false);
             $table->timestamps();  // Created and updated timestamps
         });
     }

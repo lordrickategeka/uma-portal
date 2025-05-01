@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Mail\PaymentFailedMail;
 use App\Mail\SubscriptionActivatedMail;
+use App\Models\InstallmentPlan;
 use App\Models\Order;
 use App\Models\Plan;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,12 +17,50 @@ use Illuminate\Support\Facades\Mail;
 
 class PaymentsController extends Controller
 {
-    public function showPaymentPage(Plan $plan)
+    public function showPaymentPage(Request $request, Plan $plan)
     {
         $user = Auth::user();
-        $order = Order::where('user_id', $user->id)->first();
-        return view('payment.payment_page', compact('plan', 'order'));
+        $installmentOption = $request->query('installment_option');
+        $installmentId = $request->query('installment_id');
+        $transactionId = $request->query('transaction_id');
+
+        // Check if this is a continuation of an installment payment
+        $installmentPlan = null;
+        $transaction = null;
+
+        if ($transactionId) {
+            $transaction = Transaction::where('user_id', $user->id)
+                ->where('id', $transactionId)
+                ->where('status', 'pending')
+                ->first();
+
+            if ($transaction) {
+                $installmentPlan = InstallmentPlan::find($transaction->installment_plan_id);
+            }
+        } elseif ($installmentId) {
+            $installmentPlan = InstallmentPlan::where('user_id', $user->id)
+                ->where('id', $installmentId)
+                ->first();
+        }
+
+        // Get existing or create new order
+        $order = Order::where(function ($query) use ($user, $transactionId) {
+            $query->where('user_id', $user->id);
+            if ($transactionId) {
+                $query->where('transaction_id', $transactionId);
+            }
+        })->orderBy('created_at', 'desc')
+            ->first();
+
+        return view('payment.payment_page', [
+            'plan' => $plan,
+            'order' => $order,
+            'installment_option' => $installmentOption,
+            'installmentPlan' => $installmentPlan,
+            'transaction' => $transaction
+        ]);
     }
+
 
     private $pesapalBaseUrl;
     private $authUrl;
@@ -100,7 +140,7 @@ class PaymentsController extends Controller
         //     $order = $existingOrder;
         //     Log::info("Existing pending order found: " . $order->id);
         // } else {
-        $totalAmount = $plan->price;  // Including service fee
+        $totalAmount = $plan->price;
         $merchantReference = "SUB-" . time() . "-" . rand(1000, 9999);
 
         // Fetch default payment method
@@ -228,7 +268,6 @@ class PaymentsController extends Controller
         }
 
         $apiUrl = $this->transactionStatusUrl . "?orderTrackingId={$trackingId}";
-        // $apiUrl = "{$this->transactionStatusUrl}/{$trackingId}";
 
         try {
             $response = Http::withoutVerifying()
@@ -268,7 +307,7 @@ class PaymentsController extends Controller
 
         Log::info("Processing payment for order {$order->id}, status: {$paymentStatus}, code: {$statusCode}");
 
-        $failureReason = match(true) {
+        $failureReason = match (true) {
             $statusCode == 0 => 'Payment initialization failed',
             $statusCode == 2 => 'Payment was declined',
             $statusCode == 3 => 'Payment timed out',
@@ -302,9 +341,9 @@ class PaymentsController extends Controller
                 );
 
                 Mail::to($order->user->email)->send(new SubscriptionActivatedMail(
-                    $order->user, 
-                    $order->plan, 
-                    $confirmationCode, 
+                    $order->user,
+                    $order->plan,
+                    $confirmationCode,
                     $paymentMethod
                 ));
 
@@ -314,16 +353,16 @@ class PaymentsController extends Controller
             return true;
         } else {
             Mail::to($order->user->email)->send(new PaymentFailedMail(
-                $order->user, 
-                $order->plan, 
+                $order->user,
+                $order->plan,
                 $paymentStatus,
                 $failureReason
             ));
-    
+
             // Mark order as failed if not completed
-            $order->update(['payment_status' => 'failed']);
+            $order->update(['payment_status' => $failureReason]);
             Log::warning("Payment failed for order {$order->id}. Status: {$paymentStatus}, Code: {$statusCode}");
-            
+
             return false;
         }
     }

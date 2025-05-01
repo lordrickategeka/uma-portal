@@ -45,7 +45,6 @@ class Order extends Model
     {
         return $this->hasOne(UserPlan::class, 'user_id', 'user_id')->whereColumn('plan_id', 'orders.plan_id');
     }
-       
     
     public function paymentMethod()
     {

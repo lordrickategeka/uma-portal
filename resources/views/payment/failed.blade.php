@@ -43,7 +43,7 @@
                         <a href="{{ route('orders.show', $order->id) }}" class="btn btn-secondary mr-2">
                             <i class="fa fa-eye"></i> View Order
                         </a>
-                        <a href="#" class="btn btn-primary">
+                        <a href="{{route('subscriptions.index')}}" class="btn btn-primary">
                             <i class="fa fa-credit-card"></i> Try Again
                         </a>
                     </div>

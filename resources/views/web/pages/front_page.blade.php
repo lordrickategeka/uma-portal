@@ -307,8 +307,10 @@
     <!-- Contact One Area End -->
     <div class="contact__one">
         <div class="contact__one-wrapper">
-            <div class="contact__one-image"> <img src="{{ asset('web-pages/assets/img/contact/contact.jpg') }}"
-                    alt=""> </div>
+            <div class="contact__one-image"> 
+                <img src="{{ asset('web-pages/assets/images/call-us.jpg') }}"
+                    alt=""> 
+                </div>
             <div class="contact__one-content"> <span class="subtitle-three">Lets' Talk!</span>
                 <h2>Contact Us</h2>
                 <form action="#" class="contact__one-form">
@@ -324,12 +326,12 @@
     </div>
     <!-- Contact One Area End -->
     <!-- Testimonial Two Area Start -->
-    <div class="testimonial__three section-padding">
+    {{-- <div class="testimonial__three section-padding">
         <div class="container">
             <div class="row align-items-center mb-60 gy-5">
                 <div class="col-xl-6 col-lg-6 col-md-8">
                     <div class="testimonial__three-title">
-                        {{-- <span class="">Events You Missed over</span> --}}
+                        <span class="">Events You Missed over</span>
                         <h2>Events</h2>
                     </div>
                 </div>
@@ -374,7 +376,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
     <!-- Project Three Area End -->
     <!-- Why Choose Us Three Area Start -->
     <div class="why-choose-us__three section-padding">
@@ -455,8 +457,8 @@
                                     </span>
                                 </div>
                                 <h5>
-                                    <a href="{{ route('blog.show', $article->id) }}" class="blog-heading">
-                                        {{ $article->title }}
+                                    <a href="{{ route('blog.show', ['id' => $article->id, 'slug' => $article->slug]) }}" class="blog-heading">
+                                        {{ \Illuminate\Support\Str::words($article->title, 4) }}
                                     </a>
                                 </h5>
                                 @if ($article->tags->count())

@@ -22,9 +22,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/44.3.0/ckeditor5.css" />
-    <script src="https://cdn.ckeditor.com/ckeditor5/44.3.0/ckeditor5.umd.js"></script>
-
     <style>
         .main-container {
             width: 795px;
@@ -201,7 +198,7 @@
 
                             <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#"
                                 data-bs-toggle="dropdown">
-                               
+
                                 <img src="{{ asset('images/default_user.jpg') }}"
                                     class="avatar img-fluid rounded me-1" alt="Charles Hall" />
                                 <span class="text-dark">Hello,
@@ -474,7 +471,6 @@
 
     <!-- Include SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             @if (session('success'))
@@ -517,15 +513,25 @@
         });
     </script>
 
-<script>
-    // Select all checkbox functionality
-    document.getElementById('select-all').addEventListener('click', function() {
-        let checkboxes = document.querySelectorAll('.order-select');
-        checkboxes.forEach(checkbox => checkbox.checked = this.checked);
-    });
-</script>
+    <script>
+        // Select all checkbox functionality
+        document.getElementById('select-all').addEventListener('click', function() {
+            let checkboxes = document.querySelectorAll('.order-select');
+            checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+        });
+    </script>
 
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            ClassicEditor
+                .create(document.querySelector('#editor'))
+                .catch(error => {
+                    console.error(error);
+                });
+        });
+    </script>
 </body>
 
 </html>

@@ -3897,10 +3897,10 @@ Menu Bar CSS
   line-height: 50px;
   text-align: center;
   border-radius: 50%;
-  color: var(--color-1);
+  color: var(--color-2);
   transition: all 0.4s ease-out;
-  background: var(--primary-color-1);
-  border: 1px solid var(--border-color-1);
+  background: var(--primary-color-2);
+  border: 1px solid var(--border-color-2);
 }
 .header__area-menubar-right-sidebar-popup-social ul li a i:hover {
   color: var(--white);
@@ -4024,7 +4024,7 @@ Menu Bar CSS
   font-size: 14px;
 }
 .header__area.three .need-help a {
-  font-size: 20px;
+  font-size: 13px;
   font-family: var(--heading-font);
   font-weight: 600;
   transition: 0.4s;
@@ -4873,7 +4873,7 @@ Breadcrumb CSS
   position: absolute;
   top: 0;
   left: 0;
-  background: linear-gradient(302deg, #14133B 0%, #1e2e97 100%);
+  background: linear-gradient(302deg, #1510c5 0%, #14133B 100%);
   opacity: 0.7;
 }
 .breadcrumb__area-content {
@@ -4882,7 +4882,7 @@ Breadcrumb CSS
 }
 .breadcrumb__area-content h2 {
   color: var(--white);
-  font-size: 57px;
+  font-size: 40px;
   line-height: 1.15;
 }
 .breadcrumb__area-content span {
@@ -7127,11 +7127,11 @@ Project six CSS
   transition: 0.4s;
 }
 .project__six-filter-button button:hover {
-  background-color: var(--primary-color-1);
+  background-color: var(--primary-color-2);
   color: var(--white);
 }
 .project__six-filter-button button.active {
-  background-color: var(--primary-color-1);
+  background-color: var(--primary-color-2);
   color: var(--white);
 }
 
@@ -8608,6 +8608,8 @@ Blog Details Style
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 25px;
+  height: auto;
+    width: 40rem;
 }
 .blog__details .blog__one-single-blog-content-top {
   margin-bottom: 25px;
@@ -9015,7 +9017,7 @@ Contact Two CSS
   justify-content: center;
   align-items: center;
   border-radius: 50%;
-  color: var(--primary-color-1);
+  color: var(--primary-color-2);
   margin-bottom: 15px;
 }
 
@@ -10042,7 +10044,7 @@ Sidebar CSS
   color: var(--white);
 }
 .sidebar-item-single.sidebar-contact {
-  background-color: var(--primary-color-1);
+  background-color: var(--primary-color-2);
   border-color: var(--primary-color-1);
   border-radius: 20px;
   padding: 45px 51px;
@@ -10632,7 +10634,7 @@ Footer Three CSS
 .footer__three {
   position: relative;
   z-index: 1;
-  background-color: var(--color-7);
+  background-color: #18253e;
   padding-top: 90px;
 }
 .footer__three .footer-wrapper {
@@ -10950,7 +10952,7 @@ Footer Copyright CSS
   border-color: var(--primary-color-2);
 }
 .copyright__one.three {
-  background-color: var(--color-7);
+  background-color: #14133B;
   border-top: 1px solid var(--border-color-1);
   margin-top: 100px;
 }

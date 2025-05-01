@@ -1,7 +1,7 @@
 @extends('layouts.dash')
 
 @section('content')
-    <div class="p-6">
+   
         <div class="flex justify-between mb-4">
             <h2 class="text-xl font-bold">Roles</h2>
             <a href="{{ route('roles.create') }}" class="btn btn-primary bg-blue-500 text-white px-4 py-2 rounded">Create Role</a>
@@ -22,5 +22,4 @@
                 </div>
             </div>
         @endforeach
-    </div>
 @endsection

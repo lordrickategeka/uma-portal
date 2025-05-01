@@ -15,7 +15,7 @@
     <ul>
         <li><strong>Plan:</strong> {{ $plan->name }}</li>
         <li><strong>Price:</strong> UGX {{ number_format($plan->price) }}</li>
-        {{-- <li><strong>Failure Reason:</strong> {{ $failureReason }}</li> --}}
+        <li><strong>Failure Reason:</strong> {{ $failureReason }}</li>
     </ul>
     
     <h2>Next Steps</h2>

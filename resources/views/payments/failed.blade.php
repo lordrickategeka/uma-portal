@@ -16,7 +16,7 @@
                         <h5 class="card-title">Payment was not successful</h5>
                         <p class="card-text">Your transaction could not be completed. Please try again.</p>
                         <p>Reference: {{ request('reference') }}</p>
-                        <a href="{{ route('payment.form') }}" class="btn btn-primary">Try Again</a>
+                        <a href="#" class="btn btn-primary">Try Again</a>
                     </div>
                 </div>
             </div>

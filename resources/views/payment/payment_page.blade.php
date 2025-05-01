@@ -29,12 +29,24 @@
                 <p><strong>Description:</strong> {{ $plan->membershipCategory->description ?? 'No description available' }}
                 </p>
 
-                <!-- Payment form -->
+                <!-- Pay with pesapal-->
                 <form action="{{ route('payment.subscription') }}" method="POST">
                     @csrf
                     @method('post')
                     <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                    <button type="submit" class="btn btn-success">Proceed to Payment</button>
+                    <button type="submit" class="btn btn-success">Proceed to Payment (pesapal)</button>
+                </form>
+
+                {{-- pay with flutterwave --}}
+                <form action="{{ route('payments.initialize') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="plan_id" value="{{ $plan->id }}">
+
+                    @if (isset($installment_option) && $installment_option)
+                        <input type="hidden" name="installment_option" value="{{ $installment_option }}">
+                    @endif
+
+                    <button type="submit" class="mt-4 btn btn-info">Proceed to Payment (flutterwave)</button>
                 </form>
             </div>
         </div>

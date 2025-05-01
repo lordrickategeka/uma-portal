@@ -17,7 +17,7 @@ class UserPaymentMethodsTableSeeder extends Seeder
         UserPaymentMethod::create([
             'user_id' => 1,
             'payment_method_id' => 1,
-            'account_number' => '1234-5678-9012',
+            'account_number' => '0753901870',
             'is_default' => true,
         ]);
     }

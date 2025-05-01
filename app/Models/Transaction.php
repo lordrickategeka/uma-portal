@@ -13,9 +13,14 @@ class Transaction extends Model
         'name',
         'phone',
         'status',
+        'payment_method',
         'payment_link',
         'user_id',
+        'plan_id',
         'payment_data',
+        'purpose',
+         'installment_plan_id',
+         'installment_number'
     ];
 
     /**
@@ -34,5 +39,43 @@ class Transaction extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function userPlan()
+    {
+        return $this->hasOne(UserPlan::class, 'user_id', 'user_id')->whereColumn('plan_id', 'orders.plan_id');
+    }
+
+    // Many-to-many relationship with installment plans
+    public function installmentPlans()
+    {
+        return $this->belongsToMany(InstallmentPlan::class, 'installment_plan_transactions')
+            ->withPivot('installment_number', 'applied_amount')
+            ->withTimestamps();
+    }
+
+    public function resolveOrAttachInstallmentPlanFromMeta(array $meta)
+    {
+        $installmentPlan = $this->installmentPlans()->first();
+
+        if (!$installmentPlan && isset($meta['installment_plan_id'])) {
+            $installmentPlan = InstallmentPlan::find($meta['installment_plan_id']);
+
+            if ($installmentPlan) {
+                $installmentPlan->transactions()->syncWithoutDetaching([
+                    $this->id => [
+                        'installment_number' => $meta['installment_number'] ?? ($installmentPlan->paid_installments + 1),
+                        'applied_amount' => $this->amount,
+                    ]
+                ]);
+            }
+        }
+
+        return $installmentPlan;
     }
 }

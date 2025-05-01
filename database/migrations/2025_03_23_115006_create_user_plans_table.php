@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade')->unique();
             $table->foreignId('plan_id')->constrained()->onDelete('cascade');
             $table->timestamp('subscribed_at')->useCurrent();
-            $table->timestamp('expires_at')->nullable();
+            $table->string('expires_at')->nullable();
             $table->timestamps();
         });
     }

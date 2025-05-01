@@ -16,15 +16,23 @@
                     </a>
                 </li>
 
-                <li class="sidebar-item {{ request()->routeIs('subscriptions.*') ? 'active' : '' }}">
-                    <a class="sidebar-link" href="{{ route('subscriptions.index') }}">
-                        <i class="align-middle" data-feather="user-plus"></i> <span
-                            class="align-middle">Subscriptions</span>
-                    </a>
-                </li>
-                <hr />
+                @hasanyrole('admin|super-admin|member')
+                    <li class="sidebar-item {{ request()->routeIs('subscriptions.*') ? 'active' : '' }}">
+                        <a class="sidebar-link" href="{{ route('subscriptions.index') }}">
+                            <i class="align-middle" data-feather="user-plus"></i> <span
+                                class="align-middle">Subscriptions</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item {{ request()->routeIs('installments.*') ? 'active' : '' }}">
+                        <a class="sidebar-link" href="{{ route('installments.index') }}">
+                            <i class="align-middle" data-feather="user-plus"></i> <span
+                                class="align-middle">Installments</span>
+                        </a>
+                    </li>
+                    <hr />
+                @endhasanyrole
 
-                @role('editor')
+                @hasanyrole('admin|super-admin|editor')
                     <li class="sidebar-header">
                         Manage Website
                     </li>
@@ -35,20 +43,47 @@
                             <i class="align-middle" data-feather="codepen"></i> <span class="align-middle">Posts</span>
                         </a>
                     </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('posts.*') ? 'active' : '' }}"
+                            href="{{ route('posts.all') }}">
+                            <i class="align-middle" data-feather="codepen"></i> <span class="align-middle">Events</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('subscribers.*') ? 'active' : '' }}" href="{{route('subscribers.index')}}">
+                            <i class="align-middle" data-feather="book-open"></i> <span class="align-middle">Subscribers</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}" href="{{route('notifications.index')}}">
+                            <i class="align-middle" data-feather="book-open"></i> <span class="align-middle">Notifications</span>
+                        </a>
+                    </li>
+
                     <li class="sidebar-item">
                         <a class="sidebar-link {{ request()->routeIs('categories.*') ? 'active' : '' }}"
                             href="{{ route('categories.index') }}">
                             <i class="align-middle" data-feather="codepen"></i> <span class="align-middle">Post Category</span>
                         </a>
                     </li>
+
                     <li class="sidebar-item">
                         <a class="sidebar-link {{ request()->routeIs('branches.*') ? 'active' : '' }}"
                             href="{{ route('branches.index') }}">
                             <i class="align-middle" data-feather="codepen"></i> <span class="align-middle">Branches</span>
                         </a>
                     </li>
+                    {{-- <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('events.*') ? 'active' : '' }}"
+                            href="{{ route('events.index') }}">
+                            <i class="align-middle" data-feather="codepen"></i> <span class="align-middle">Events</span>
+                        </a>
+                    </li> --}}
                     <hr />
-                @endrole
+                @endhasanyrole
 
                 @hasanyrole('admin|super-admin')
                     <li class="sidebar-header">
@@ -82,7 +117,6 @@
                         </a>
                     </li>
 
-
                     <li class="sidebar-header">
                         System Settings
                     </li>
@@ -109,7 +143,7 @@
                 </li>
 
 
-                @role('admin')
+                @role('super-admin')
                     <li class="sidebar-item">
                         <a class="sidebar-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
                             href="{{ route('users.index') }}">

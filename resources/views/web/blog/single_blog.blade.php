@@ -69,16 +69,15 @@
                         <p>{{ $blog->additional_content }}</p>
         
                         <!-- Display tags -->
-                        <div class="blog__details-tags">
-                            <span>Tags:</span>
+                        <div class="sidebar-item-single sidebar-blog-tags">
+                            <div class="sidebar-item-single-title">
+                                <h5>Tags</h5>
+                            </div>
                             <div class="tags">
-                                @if ($blog->tags && $blog->tags->count() > 0)
-                                    @foreach ($blog->tags as $tag)
-                                        {{-- <a href="{{ route('blog.tag', $tag->slug) }}">{{ $tag->name }}</a> --}}
-                                    @endforeach
-                                @else
-                                    <p>No Tags available</p>
-                                @endif
+                                @foreach ($blog->tags as $tag)
+                                    {{-- <a href="{{ route('blog.tag', $tag->id) }}">{{ $tag->name }}</a> --}}
+                                    {{ $tag->name }},
+                                @endforeach
                             </div>
                         </div>
                     </div>
@@ -97,53 +96,7 @@
                         </form>
                     </div> --}}
                 </div>
-                <div class="col-xl-4">
-                    <div class="blog__standard-sidebar page-sidebar">
-                        <div class="sidebar-item-single sidebar-search">
-                            <form action="#" method="GET">
-                                <input type="text" name="query" placeholder="Search here...">
-                                <button type="submit">Search</button>
-                            </form>
-                        </div>
-                        <div class="sidebar-item-single sidebar-recent-blog">
-                            <div class="sidebar-item-single-title">
-                                <h5>Latest Post</h5>
-                            </div>
-                            @foreach ($latestBlogs as $latestBlog)
-                                <div class="recent-blog-single">
-                                    <div class="blog__one-single-blog-content-top">
-                                        <span>
-                                            <i class="far fa-user"></i>
-                                            {{ $latestBlog->author->name }}
-                                        </span>
-                                        <span>
-                                            <i class="far fa-calendar-alt"></i>
-                                            {{ $latestBlog->created_at->format('d M Y') }}
-                                        </span>
-                                    </div>
-                                    <a
-                                        href="{{ route('blog.show', ['slug' => $latestBlog->slug, 'id' => $latestBlog->id]) }}">{{ $latestBlog->title }}</a>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div class="sidebar-item-single sidebar-contact">
-                            <h3>Call Us Today!</h3>
-                            <p>Call us today to discuss how we can drive your success forward</p>
-                            <i class="call-icon fas fa-phone-alt"></i>
-                            <a href="tel:+656354981516">+656 (354) 981 516</a>
-                        </div>
-                        <div class="sidebar-item-single sidebar-blog-tags">
-                            <div class="sidebar-item-single-title">
-                                <h5>Tags</h5>
-                            </div>
-                            <div class="tags">
-                                @foreach ($blog->tags as $tag)
-                                    {{-- <a href="{{ route('blog.tag', $tag->id) }}">{{ $tag->name }}</a> --}}
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @include('inc.single_page_sidebar')
             </div>
         </div>
     </div>

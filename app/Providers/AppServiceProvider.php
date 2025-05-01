@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Blog;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,5 +25,11 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Paginator::useBootstrapFour();
+
+        View::composer('*', function ($view) {
+            $blog = Blog::all(); 
+            $latestBlogs = Blog::latest()->take(5)->get();
+            $view->with('latestBlogs', $latestBlogs);
+        });
     }
 }

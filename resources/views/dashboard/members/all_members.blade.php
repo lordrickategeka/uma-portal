@@ -20,32 +20,34 @@
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>First Name</th>
-                    <th>Last Name</th>
+                    <th><input type="checkbox" id="select-all"> No.</th>
+                    <th>Name</th>
                     <th>Email</th>
                     <th>Gender</th>
-                    <th>Age</th>
                     <th>Phone</th>
                     <th>Employer</th>
                     <th>Category</th>
                     <th>Specialization</th>
-                    <th>Registration Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($users as $user)
+                @foreach ($users as $index => $user)
                 <tr>
-                    <td>{{ $user->first_name }}</td>
-                    <td>{{ $user->last_name }}</td>
+                    <td>
+                        <input type="checkbox" name="selected_ids[]" value="{{ $user->id }}" class="order-select">
+                        {{ $index + 1 }}
+                    </td>
+                    <td>{{ $user->first_name }}
+                        <small>{{ $user->last_name }}</small>
+                    </td>
+                    
                     <td>{{ $user->email }}</td>
                     <td>{{ $user->profile ? $user->profile->gender : 'N/A' }}</td>
-                    <td>{{ $user->profile ? $user->profile->age : 'N/A' }}</td>
                     <td>{{ $user->profile ? $user->profile->phone : 'N/A' }}</td>
                     <td>{{ $user->profile ? $user->profile->employer : 'N/A' }}</td>
                     <td>{{ $user->profile ? $user->profile->category : 'N/A' }}</td>
                     <td>{{ $user->profile ? $user->profile->specialization : 'N/A' }}</td>
-                    <td>{{ $user->profile ? $user->profile->registration_status : 'N/A' }}</td>
                     <td>
                         <!-- Add action buttons here, for example: -->
                         <a href="#" class="btn btn-info">View</a>

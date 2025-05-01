@@ -16,7 +16,7 @@
                         <h5 class="card-title">Thank you for your payment!</h5>
                         <p class="card-text">Your transaction has been completed successfully.</p>
                         <p>Reference: {{ request('reference') }}</p>
-                        <a href="{{ url('/') }}" class="btn btn-primary">Back to Home</a>
+                        <a href="{{ url('/home') }}" class="btn btn-primary">Back to Home</a>
                     </div>
                 </div>
             </div>

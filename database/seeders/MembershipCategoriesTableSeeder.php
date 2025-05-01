@@ -13,14 +13,36 @@ class MembershipCategoriesTableSeeder extends Seeder
      */
     public function run(): void
     {
-        MembershipCategory::create([
-            'name' => 'Standard',
-            'description' => 'Basic membership package',
-        ]);
+        $categories = [
+            [
+                'name' => 'Medical Officers & SHOs',
+                'description' => 'Medical Officers and Senior House Officers category with annual subscription requirements',
+                'status' => 'active'
+            ],
+            [
+                'name' => 'Specialists',
+                'description' => 'Medical Specialists category with annual subscription requirements',
+                'status' => 'active'
+            ],
+            [
+                'name' => 'Intern Doctors',
+                'description' => 'Intern Doctors category with one-time membership fee only',
+                'status' => 'active'
+            ],
+            [
+                'name' => 'Medical Students',
+                'description' => 'Medical Students category with one-time membership fee only',
+                'status' => 'active'
+            ],
+            [
+                'name' => 'Life Membership',
+                'description' => 'Life Membership category with 20 years subscriptions paid in one installment',
+                'status' => 'active'
+            ]
+        ];
 
-        MembershipCategory::create([
-            'name' => 'Premium',
-            'description' => 'Premium membership package with extra features',
-        ]);
+        foreach ($categories as $category) {
+            MembershipCategory::create($category);
+        }
     }
 }

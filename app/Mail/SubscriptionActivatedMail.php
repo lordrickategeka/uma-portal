@@ -32,7 +32,7 @@ class SubscriptionActivatedMail extends Mailable
         $this->confirmationCode = $confirmationCode;
         $this->paymentMethod = $paymentMethod;
         $this->subscriptionStart = now();
-        $this->subscriptionExpiry = now()->addMonth();
+        $this->subscriptionExpiry = now()->addYear();
     }
 
     public function build()
