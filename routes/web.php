@@ -127,7 +127,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('plans', PlansController::class);
     Route::put('/plans/{id}/restore', [PlansController::class, 'restore'])->name('plans.restore');
     Route::match(['get', 'post'], '/plans/{plan_id}/subscribe', [PlansController::class, 'subscribe'])->name('plans.subscribe');
-    Route::post('/plans/{plan_id}/subscribe', [PlansController::class, 'subscribe'])->name('plans.subscribe');
 
     // membership-categories
     Route::resource('membership-categories', MembershipCategoryController::class);

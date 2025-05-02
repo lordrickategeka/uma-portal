@@ -1,0 +1,16 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/cabaebgf/loganate/uma/web
+    - /bin/cp -R * $DEPLOYPATH
+    - /bin/cp .env.example $DEPLOYPATH/.env
+    - /bin/cp .htaccess $DEPLOYPATH/public/
+    - export REPOPATH=/home/cabaebgf/repositories/loganate
+    - cd $DEPLOYPATH
+    - /opt/cpanel/composer/bin/composer install --no-dev
+    - php artisan key:generate
+    - php artisan config:cache
+    - php artisan route:cache
+    - php artisan view:cache
+    - php artisan storage:link
+    - chmod -R 755 storage bootstrap/cache
