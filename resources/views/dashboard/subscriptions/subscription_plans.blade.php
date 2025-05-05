@@ -15,163 +15,179 @@
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
 
-        <div class="col-12 col-lg-12">
+        <div class="col-12 col-md-6">
             @php
-                // Check if user has ANY active plan
                 $hasAnyActivePlan = $userActivePlans->isNotEmpty();
             @endphp
 
             @foreach ($plans as $plan)
-                <div class="card">
+                @php
+                    $userActivePlan = $userActivePlans->get($plan->id);
+                    $isLifeMembership =
+                        strtolower($plan->membershipCategory->name) === 'life' ||
+                        strtolower($plan->name) === 'life membership';
+                    $ongoingInstallment = $installmentPlans->get($plan->id);
+                    $hasCompletedInstallment = $ongoingInstallment && $ongoingInstallment->status === 'completed';
+                    $pendingTransaction =
+                        $ongoingInstallment && !$hasCompletedInstallment
+                            ? $pendingTransactions->get($ongoingInstallment->id)
+                            : null;
+                @endphp
+
+                <div class="card mb-4">
                     <div class="card-body">
-                        <!-- Display plan details dynamically -->
-                        <div class="membership-category">
-                            <h6 class="mt-3">{{ $plan->name }} ({{ ucfirst($plan->membershipCategory->name) }})</h6>
-                            <p class="mt-3">{{ $plan->description ?? $plan->membershipCategory->description }}</p>
-                            <ul>
-                                <li><strong>Membership Fee:</strong> UGX {{ number_format($plan->price, 0) }}</li>
-                                @if($plan->membershipCategory->name !== 'life')
-                                    <li><strong>Annual Subscription Fee:</strong> UGX {{ number_format($plan->price, 0) }}</li>
-                                @endif
-                            </ul>
+                        <h6 class="mt-3">{{ $plan->name }} ({{ ucfirst($plan->membershipCategory->name) }})</h6>
+                        <p class="mt-3">{{ $plan->description ?? $plan->membershipCategory->description }}</p>
+                        <ul>
+                            <li><strong>Membership Fee:</strong> UGX {{ number_format($plan->price, 0) }}</li>
+                            @unless ($isLifeMembership)
+                                <li><strong>Annual Subscription Fee:</strong> UGX {{ number_format($plan->price, 0) }}</li>
+                            @endunless
+                        </ul>
 
-                            @php
-                                // Check if the user has this specific active plan
-                                $userActivePlan = $userActivePlans->get($plan->id);
-
-                                // Check if this is a life membership plan
-                                $isLifeMembership =
-                                    $plan->membershipCategory->name === 'life' ||
-                                    strtolower($plan->name) === 'life membership';
-
-                                // Check if user has an ongoing installment plan for THIS SPECIFIC plan
-                                $ongoingInstallment = $installmentPlans->get($plan->id);
-
-                                // Check if installment is completed
-                                $hasCompletedInstallment = $ongoingInstallment && $ongoingInstallment->status === 'completed';
-
-                                // Get any incomplete transaction for this plan's installment
-                                $pendingTransaction = $ongoingInstallment && $ongoingInstallment->status !== 'completed' ? 
-                                    $pendingTransactions->get($ongoingInstallment->id) : null;
-                            @endphp
-
-                            @if ($userActivePlan || $hasCompletedInstallment)
-                                <!-- If the user has this active plan or completed installment payments -->
-                                <button type="button" class="btn btn-success" disabled>
-                                    <i class="fas fa-check-circle me-1"></i> Subscribed
-                                </button>
-                                <div class="mt-2">
-                                    <small>
-                                        @if($isLifeMembership)
-                                            Life Membership (Non-expiring)
-                                        @else
-                                            Expires: {{ \Carbon\Carbon::parse($userActivePlan->expires_at ?? ($hasCompletedInstallment ? DB::table('user_plans')->where('user_id', auth()->id())->where('plan_id', $plan->id)->first()->expires_at : null))->format('d M Y') }}
-                                        @endif
-                                    </small>
-                                </div>
-                            @elseif (($hasAnyActivePlan || $hasAnyOngoingInstallment) && !$ongoingInstallment)
-                                <!-- If the user has another active plan or ongoing installment (not this one) -->
-                                <button type="button" class="btn btn-secondary" disabled>
-                                    <i class="fas fa-lock me-1"></i> Unavailable
-                                </button>
-                                <small class="d-block mt-1">
-                                    You already have an active membership plan or ongoing installment.
+                        @if ($userActivePlan || $hasCompletedInstallment)
+                            <button type="button" class="btn btn-success" disabled>
+                                <i class="fas fa-check-circle me-1"></i> Subscribed
+                            </button>
+                            <div class="mt-2">
+                                <small>
+                                    @if ($isLifeMembership)
+                                        Life Membership (Non-expiring)
+                                    @else
+                                        Expires:
+                                        {{ \Carbon\Carbon::parse($userActivePlan->expires_at ??DB::table('user_plans')->where('user_id', auth()->id())->where('plan_id', $plan->id)->value('expires_at'))->format('d M Y') }}
+                                    @endif
                                 </small>
-                            @elseif ($ongoingInstallment && $ongoingInstallment->status !== 'completed')
-                                <!-- If the user has an ongoing (non-completed) installment plan for THIS PLAN -->
-                                <div class="installment-info">
-                                    <div class="mb-2">
-                                        <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar" role="progressbar"
-                                                style="width: {{ ($ongoingInstallment->paid_installments / $ongoingInstallment->total_installments) * 100 }}%;"
-                                                aria-valuenow="{{ ($ongoingInstallment->paid_installments / $ongoingInstallment->total_installments) * 100 }}"
-                                                aria-valuemin="0" aria-valuemax="100">
-                                                {{ round(($ongoingInstallment->paid_installments / $ongoingInstallment->total_installments) * 100) }}%
-                                            </div>
+                            </div>
+                        @elseif (($hasAnyActivePlan || $hasAnyOngoingInstallment) && !$ongoingInstallment)
+                            <button type="button" class="btn btn-secondary" disabled>
+                                <i class="fas fa-lock me-1"></i> Unavailable
+                            </button>
+                            <small class="d-block mt-1">
+                                You already have an active membership plan or ongoing installment.
+                            </small>
+                        @elseif ($ongoingInstallment && !$hasCompletedInstallment)
+                            <div class="installment-info">
+                                <div class="mb-2">
+                                    <div class="progress" style="height: 20px;">
+                                        @php
+                                            $progress =
+                                                ($ongoingInstallment->paid_installments /
+                                                    $ongoingInstallment->total_installments) *
+                                                100;
+                                        @endphp
+                                        <div class="progress-bar" role="progressbar" style="width: {{ $progress }}%;"
+                                            aria-valuenow="{{ $progress }}" aria-valuemin="0" aria-valuemax="100">
+                                            {{ round($progress) }}%
                                         </div>
                                     </div>
-
-                                    <p class="mb-2">
-                                        <strong>Installment Plan:</strong>
-                                        {{ $ongoingInstallment->paid_installments }}/{{ $ongoingInstallment->total_installments }}
-                                        paid
-                                        (Remaining: UGX {{ number_format($ongoingInstallment->remaining_amount, 0) }})
-                                    </p>
-
-                                    @if ($pendingTransaction)
-                                        <!-- If there's a pending transaction, show Continue Payment button -->
-                                        <a href="{{ route('payments.continue', $pendingTransaction->id) }}"
-                                            class="btn btn-warning">
-                                            <i class="fas fa-sync-alt me-1"></i> Continue Payment
-                                        </a>
-                                        <small class="d-block mt-1">
-                                            You have a pending payment started {{ \Carbon\Carbon::parse($pendingTransaction->created_at)->diffForHumans() }}.
-                                            Click to continue where you left off.
-                                        </small>
-                                    @else
-                                        <!-- No pending transaction, show Make Next Payment button -->
-                                        <a href="{{ route('installment.make-next-payment', $ongoingInstallment->id) }}"
-                                            class="btn btn-primary">
-                                            <i class="fas fa-credit-card me-1"></i> Pay Next Installment
-                                        </a>
-                                    @endif
-
-                                    <div class="mt-2">
-                                        <small>
-                                            Next payment: UGX
-                                            {{ number_format($ongoingInstallment->amount_per_installment, 0) }}
-                                            due by
-                                            {{ \Carbon\Carbon::parse($ongoingInstallment->next_payment_date)->format('d M Y') }}
-                                        </small>
-                                    </div>
-
-                                    <div class="mt-2">
-                                        <a href="{{ route('installments.index', $ongoingInstallment->id) }}"
-                                            class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-info-circle me-1"></i> View Installment Details
-                                        </a>
-                                    </div>
                                 </div>
-                            @else
-                                <!-- If the user doesn't have an active plan or ongoing installment -->
-                                @if ($isLifeMembership)
-                                    <div class="payment-options mt-3">
-                                        <h6>Payment Options:</h6>
-                                        <form action="{{ route('payments.initialize') }}" method="POST">
-                                            @csrf
-                                            <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                                            <div class="form-group">
-                                                <select name="installment_option" class="form-control mb-3">
-                                                    <option value="full">Full Payment - UGX
-                                                        {{ number_format($plan->price, 0) }}</option>
-                                                    <option value="2">2 Installments - UGX
-                                                        {{ number_format($plan->price / 2, 0) }} each</option>
-                                                    <option value="3">3 Installments - UGX
-                                                        {{ number_format($plan->price / 3, 0) }} each</option>
-                                                    <option value="4">4 Installments - UGX
-                                                        {{ number_format($plan->price / 4, 0) }} each</option>
-                                                </select>
-                                                <button type="submit" class="btn btn-primary">
-                                                    <i class="fas fa-credit-card me-1"></i> Proceed to Payment
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
+
+                                <p><strong>Installment Plan:</strong>
+                                    {{ $ongoingInstallment->paid_installments }}/{{ $ongoingInstallment->total_installments }}
+                                    paid
+                                    (Remaining: UGX {{ number_format($ongoingInstallment->remaining_amount, 0) }})
+                                </p>
+
+                                @if ($pendingTransaction)
+                                    <a href="{{ route('payments.continue', $pendingTransaction->id) }}"
+                                        class="btn btn-warning">
+                                        <i class="fas fa-sync-alt me-1"></i> Continue Payment
+                                    </a>
+                                    <small class="d-block mt-1">
+                                        You have a pending payment started
+                                        {{ \Carbon\Carbon::parse($pendingTransaction->created_at)->diffForHumans() }}.
+                                    </small>
                                 @else
-                                    <!-- Regular subscription button for non-life memberships -->
+                                    <a href="{{ route('installment.make-next-payment', $ongoingInstallment->id) }}"
+                                        class="btn btn-primary">
+                                        <i class="fas fa-credit-card me-1"></i> Pay Next Installment
+                                    </a>
+                                @endif
+
+                                <div class="mt-2">
+                                    <small>
+                                        Next payment: UGX
+                                        {{ number_format($ongoingInstallment->amount_per_installment, 0) }} due by
+                                        {{ \Carbon\Carbon::parse($ongoingInstallment->next_payment_date)->format('d M Y') }}
+                                    </small>
+                                </div>
+
+                                <div class="mt-2">
+                                    <a href="{{ route('installments.index', $ongoingInstallment->id) }}"
+                                        class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-info-circle me-1"></i> View Installment Details
+                                    </a>
+                                </div>
+                            </div>
+                        @else
+                            @if ($isLifeMembership)
+                                <div class="payment-options mt-3">
+                                    <h6>Payment Options:</h6>
                                     <form action="{{ route('payments.initialize') }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="plan_id" value="{{ $plan->id }}">
+                                        <select name="installment_option" class="form-control mb-3">
+                                            <option value="full">Full Payment - UGX {{ number_format($plan->price, 0) }}
+                                            </option>
+                                            @for ($i = 2; $i <= 4; $i++)
+                                                <option value="{{ $i }}">{{ $i }} Installments - UGX
+                                                    {{ number_format($plan->price / $i, 0) }} each</option>
+                                            @endfor
+                                        </select>
                                         <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-credit-card me-1"></i> Subscribe
+                                            <i class="fas fa-credit-card me-1"></i> Proceed to Payment
                                         </button>
                                     </form>
-                                @endif
+                                </div>
+                            @else
+                                <form action="{{ route('payments.initialize') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="plan_id" value="{{ $plan->id }}">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-credit-card me-1"></i> Subscribe
+                                    </button>
+                                </form>
                             @endif
-                        </div>
+                        @endif
                     </div>
                 </div>
             @endforeach
         </div>
-    </div>
-@endsection
+
+        <div class="col-6 col-md-6">
+            <div class="card h-auto" style="position: sticky; top: 100px; z-index: 100;">
+                <div class="card-body">
+                    <h1 class="h4 mb-3"><strong>Membership Benefits</strong></h1>
+                    <p>UMA offers a wide range of benefits to its members, including:</p>
+                    <ol class="ps-3">
+                        <li><strong>Continuous Professional Development (CPD) Programs</strong> – Gain access to structured
+                            learning and training opportunities.</li><br />
+                        <li><strong>Representation on statutory and professional bodies</strong> – Ensure your voice is
+                            heard in
+                            key policy and regulatory discussions.</li><br />
+                        <li><strong>Access to financial support through UMA SACCO</strong> – Benefit from affordable
+                            financial
+                            facilities tailored for medical professionals.</li><br />
+                        <li><strong>Group Indemnity Insurance</strong> – Secure professional liability coverage for medical
+                            practitioners.</li><br />
+                        <li><strong>Labour Relations Support</strong> – Receive expert guidance on employment matters in
+                            both
+                            public and private healthcare sectors.</li><br />
+                        <li><strong>Legal Aid Clinic for Doctors</strong> – Access legal support and advisory services
+                            tailored
+                            to the medical profession.</li><br />
+                        <li><strong>Investment Opportunities</strong> – Participate in joint investment initiatives designed
+                            for
+                            doctors.</li><br />
+                        <li><strong>Exclusive Access to Medical Publications</strong> – Enjoy free access to the Uganda
+                            Medical
+                            Journal and the UMA Newsletter.</li><br />
+                        <li><strong>Research Publication Platform</strong> – Publish approved research articles at no cost.
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+    @endsection

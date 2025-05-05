@@ -15,6 +15,18 @@ class EventController extends Controller
         return view('dashboard.events.all_events', compact('events'));
     }
 
+    // web-page-side
+    public function eventsPage()
+    {
+        $events = Event::with(['author', 'categories', 'tags', 'branch'])
+            ->where('status', 'published')
+            ->where('post_type', 'Event')
+            ->latest()
+            ->paginate(6);
+
+        return view('web.event.all_events', compact('events'));
+    }
+
     public function create()
     {
         return view('dashboard.events.create');

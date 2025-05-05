@@ -135,6 +135,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/membership-categories/{id}', [MembershipCategoryController::class, 'destroy'])->name('membership-categories.destroy');
     Route::delete('/membership-categories/{id}', [MembershipCategoryController::class, 'forcedDelete'])->name('membership-categories.forcedDelete');
 
+    // members
+    // Route::resource('/members', MembersController::class);
+    // all memmbers /users with active plans
+    Route::get('/members', [MembersController::class, 'index'])->name('members.index');
+    Route::get('/members/active-members', [MembersController::class, 'activeMembers'])->name('members.active');
+    Route::get('/members/pending-members', [MembersController::class, 'inactiveMembers'])->name('members.inactive');
+
+    Route::get('/admin/members/create', [RegisterController::class, 'showCreateMemberForm'])->name('admin.members.create');
+    Route::post('/admin/members/create', [RegisterController::class, 'createMember'])->name('admin.members.store');
+
+    Route::get('/members/{user}', [MembersController::class, 'show'])->name('members.show');
+    Route::get('/members/{user}/edit', [MembersController::class, 'edit'])->name('members.edit');
+    Route::delete('/members/{user}', [MembersController::class, 'destroy'])->name('members.destroy');
+    Route::get('/members/{user}/payments', [MembersController::class, 'payments'])->name('members.payments');
+
+
     // subscriptions
     Route::resource('subscriptions', SubscriptionsController::class);
 
@@ -157,7 +173,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // flutterwave payment redirect to form
     Route::match(['get', 'post'], '/payments/initialize', [FlutterPaymentController::class, 'initializePaymentFlutter'])->name('payments.initialize');
     Route::get('/payments/continue/{transaction_id}', [FlutterPaymentController::class, 'continuePayment'])
-    ->name('payments.continue');
+        ->name('payments.continue');
 
     // creating sub-accounts on flutterwave
     Route::post('/subaccounts/create', [SubaccountController::class, 'createSubaccount']);
@@ -174,10 +190,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/orders', [OrdersController::class, 'show'])->name('orders.show');
 
     // transactions
-    Route::resource('/transactions', TransactionsController::class);
-
-    // members
-    Route::resource('/members', MembersController::class);
+    Route::get('/transactions', [TransactionsController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/{transaction}', [TransactionsController::class, 'show'])->name('transactions.show');
+    Route::get('/transactions/export', [TransactionsController::class, 'export'])->name('transactions.export');
 
     // manage user -roles, -permissions
     Route::resource('roles', RoleController::class);

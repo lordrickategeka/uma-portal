@@ -76,12 +76,6 @@
                             <i class="align-middle" data-feather="codepen"></i> <span class="align-middle">Branches</span>
                         </a>
                     </li>
-                    {{-- <li class="sidebar-item">
-                        <a class="sidebar-link {{ request()->routeIs('events.*') ? 'active' : '' }}"
-                            href="{{ route('events.index') }}">
-                            <i class="align-middle" data-feather="codepen"></i> <span class="align-middle">Events</span>
-                        </a>
-                    </li> --}}
                     <hr />
                 @endhasanyrole
 
@@ -96,12 +90,34 @@
                         </a>
                     </li>
 
-                    <li class="sidebar-item">
-                        <a class="sidebar-link {{ request()->routeIs('members.*') ? 'active' : '' }}"
-                            href="{{ route('members.index') }}">
-                            <i class="align-middle" data-feather="users"></i> <span class="align-middle">Members</span>
+                    <li class="sidebar-item {{ request()->routeIs('members.*') ? 'active' : '' }}">
+                        <a data-bs-toggle="collapse" href="#membersSubmenu" class="sidebar-link collapsed" aria-expanded="false">
+                            <i class="align-middle" data-feather="users"></i>
+                            <span class="align-middle">Members</span>
                         </a>
+                        <ul id="membersSubmenu" class="sidebar-dropdown list-unstyled collapse {{ request()->routeIs('members.*') ? 'show' : '' }}">
+                            <li class="sidebar-item mx-5">
+                                <a class="sidebar-link {{ request()->routeIs('members.index') ? 'active' : '' }}" href="{{ route('members.index') }}">
+                                    <i class="align-middle" data-feather="users"></i>
+                                    All
+                                </a>
+                            </li>
+                            <li class="sidebar-item mx-5">
+                                <a class="sidebar-link {{ request()->routeIs('members.active') ? 'active' : '' }}" href="{{ route('members.active') }}">
+                                    <i class="align-middle" data-feather="users"></i> 
+                                    Active
+                                </a>
+                            </li>
+                            <li class="sidebar-item mx-5">
+                                <a class="sidebar-link {{ request()->routeIs('members.inactive') ? 'active' : '' }}" href="{{ route('members.inactive') }}">
+                                    <i class="align-middle" data-feather="users"></i>
+                                    Pending/Inactive
+                                </a>
+                            </li>
+                            
+                        </ul>
                     </li>
+                    
 
 
                     <li class="sidebar-item">
@@ -137,7 +153,7 @@
                 @endhasanyrole
 
                 <li class="sidebar-item">
-                    <a class="sidebar-link {{ request()->routeIs('subscriptions.*') ? 'active' : '' }}" href="#">
+                    <a class="sidebar-link {{ request()->routeIs('members.show') ? 'active' : '' }}" href="{{ route('members.show', Auth::user()->id) }}">
                         <i class="align-middle" data-feather="user"></i> <span class="align-middle">Profile</span>
                     </a>
                 </li>

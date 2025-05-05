@@ -48,7 +48,7 @@ class Transaction extends Model
 
     public function userPlan()
     {
-        return $this->hasOne(UserPlan::class, 'user_id', 'user_id')->whereColumn('plan_id', 'orders.plan_id');
+        return $this->hasOne(UserPlan::class, 'user_id', 'user_id')->whereColumn('plan_id', 'transactions.plan_id');
     }
 
     // Many-to-many relationship with installment plans

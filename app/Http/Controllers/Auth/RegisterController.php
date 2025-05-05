@@ -17,7 +17,7 @@ use App\Models\MembershipCategory;
 use App\Mail\welcomeNewMemberEmail;
 use App\Models\Branch;
 use App\Models\PaymentMethod;
-use App\Models\UserPaymentMethod;
+use App\Models\UserProfile;
 use Spatie\Permission\Models\Role;
 
 class RegisterController extends Controller
@@ -60,7 +60,6 @@ class RegisterController extends Controller
             'signature' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf,doc,docx', 'max:10240'],
             'national_id' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf,doc,docx', 'max:10240'],
 
-            'payment_mode' => ['required', 'string'],
         ];
 
         // Conditional validation based on category
@@ -102,6 +101,7 @@ class RegisterController extends Controller
             $message = "Welcome to the UMA portal, your login credentials are as below: <br>" .
                 "Email: " . $user->email . "<br>" .
                 "Password: " . $user->temp_password . "<br>" .
+                "UMA Number: " . $user->profile->uma_number . "<br>" .
                 "These credentials have also been sent to your email (" . $user->email . ").<br>" .
                 "Please login for further proceedings.";
 
@@ -181,6 +181,7 @@ class RegisterController extends Controller
 
             // 4. Create user profile with all the form data
             $profileData = [
+                'uma_number' => UserProfile::generateUMANumber(),
                 'gender' => $data['gender'],
                 'marital_status' => $data['marital_status'],
                 'age' => $data['age'],
@@ -201,20 +202,10 @@ class RegisterController extends Controller
                 'signature' => $signaturePath,
                 'national_id' => $nationalIdPath,
                 'license_document' => $licensePath,
-                'registration_status' => 'pending',
+                'registration_status' => 'completed',
             ];
 
-            // dd($profileData);
-
-            // 5. Create payment record
-            $paymentInfo = [
-                'user_id' => $user->id,
-                'payment_method_id' => $data['payment_mode'], // the selected mode from the form
-                'account_number' => $data['payment_phone'] ?? null, // Mobile number used to send money
-                'is_default' => true,
-            ];
-            UserPaymentMethod::create($paymentInfo);
-
+            
             // Log the profile data before saving
             // Log::info('Creating user profile', ['user_id' => $user->id, 'profile_data' => $profileData]);
             // 6. Save the profile
