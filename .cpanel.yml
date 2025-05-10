@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/cabaebgf/loganate/uma/web
+    - export DEPLOYPATH=/home/cabaebgf/loganate/uma-web
     - /bin/cp -R * $DEPLOYPATH
     - /bin/cp .env.example $DEPLOYPATH/.env
     - /bin/cp .htaccess $DEPLOYPATH/public/
