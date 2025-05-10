@@ -137,7 +137,7 @@
                 <div class="col-xl-7 col-lg-12">
                     <div class="about__three-content"> <span class="subtitle-two">About Uganda Medical
                             Association.</span>
-                        <h2 style="font-size: 50px">Welcome to Uganda Medical Association (UMA).</h2>
+                        <h2 style="font-size: 50px">Welcome to Uganda Medical Association (UMA) TESTING.</h2>
                         <p>
                             The Uganda Medical Association (UMA) is the premier professional body representing qualified
                             and
