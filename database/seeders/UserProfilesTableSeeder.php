@@ -34,6 +34,7 @@ class UserProfilesTableSeeder extends Seeder
             'signature' => 'signature.png',
             'national_id' => 'signature.png',
             'registration_status' => 'pending',
+            'uma_number'=> 'UMAOM012345',
         ]);
     }
 }
