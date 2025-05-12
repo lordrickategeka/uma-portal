@@ -3,9 +3,9 @@
 @section('content')
     <h1 class="h3 mb-3"><strong>Subscriptions</strong></h1>
 
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title">All Subscriptions</h5>
+    <div class="card" >
+        <div class="card-header" style="background: #003092;">
+            <h5 class="card-title" style="color: #f9fafd;">All Subscriptions</h5>
         </div>
     </div>
     <div class="row">
@@ -15,7 +15,7 @@
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
 
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-sm-6 col-md-6">
             @php
                 $hasAnyActivePlan = $userActivePlans->isNotEmpty();
             @endphp
@@ -155,8 +155,8 @@
             @endforeach
         </div>
 
-        <div class="col-6 col-md-6">
-            <div class="card h-auto" style="position: sticky; top: 100px; z-index: 100;">
+        <div class="col-12 col-sm-6 col-md-6">
+            <div class="card h-auto" style="position: sticky; top: 100px; z-index: 100; background: aliceblue;">
                 <div class="card-body">
                     <h1 class="h4 mb-3"><strong>Membership Benefits</strong></h1>
                     <p>UMA offers a wide range of benefits to its members, including:</p>

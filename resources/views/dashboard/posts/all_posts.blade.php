@@ -4,16 +4,8 @@
         <h1>News Articles</h1>
 
         <a href="{{ route('post.create') }}" class="btn btn-primary mb-3">Create News</a>
-        
-        {{-- <form id="multi-delete-form" action="{{ route('post.bulkDelete') }}" method="POST"
-            onsubmit="return confirm('Delete selected articles?')">
-            @csrf
-            @role('super-admin')
-            <div class="mb-2">
-                <button type="submit" class="btn btn-danger btn-sm">Delete Selected</button>
-            </div>
-            @endrole --}}
-            <div class="card">
+
+        <div class="card">
             <table class="table table-hover">
                 <tr class="border-t">
                     <th><input type="checkbox" id="select-all"> No.</th>
@@ -71,16 +63,27 @@
                     </tr>
                 @endforeach
             </table>
-            </div>
+        </div>
         {{-- </form> --}}
-        
+
         {{ $blogs->links('vendor.pagination.simple-tailwind') }}
-        
+
     </div>
-    {{-- <script>
+    
+@endsection
+
+{{-- <script>
         document.getElementById('select-all').addEventListener('click', function() {
             let checkboxes = document.querySelectorAll('.order-select');
             checkboxes.forEach(cb => cb.checked = this.checked);
         });
     </script> --}}
-@endsection
+
+{{-- <form id="multi-delete-form" action="{{ route('post.bulkDelete') }}" method="POST"
+            onsubmit="return confirm('Delete selected articles?')">
+            @csrf
+            @role('super-admin')
+            <div class="mb-2">
+                <button type="submit" class="btn btn-danger btn-sm">Delete Selected</button>
+            </div>
+            @endrole --}}

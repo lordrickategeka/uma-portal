@@ -32,15 +32,127 @@
     <link rel="stylesheet" href="{{ asset('web-pages/assets/sass/style.css') }}">
 </head>
 
+
 <body>
+    <style>
+        .header__container {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px 20px;
+            gap: 30px;
+        }
+
+        .logo-area {
+            flex-shrink: 0;
+        }
+
+        .logo-area img {
+            max-height: 90px;
+            display: block;
+            margin-left: -4rem;
+        }
+
+        @media (max-width: 767px) {
+            .logo-area img {
+            max-height: 90px;
+            display: block;
+            margin-left: 0rem;
+        }
+        }
+
+        .menu-block {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Top bar */
+        /* .top__bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            font-size: 14px;
+        }
+
+        .top__bar-left a,
+        .top__bar-right a {
+            margin-right: 15px;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .top__bar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+      */
+        /* Auth and search */
+        /* .auth-search-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .auth-links a {
+            margin-right: 15px;
+            font-size: 14px;
+            color: #000;
+            text-decoration: none;
+        }
+
+        .auth-links a i {
+            margin-right: 5px;
+        }
+
+        .search-bar form {
+            display: flex;
+            align-items: center;
+        } */
+
+        /* .search-bar input {
+            padding: 5px 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .search-bar button {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-left: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 0 4px 4px 0;
+        } */
+
+        /* Navigation */
+        .main-nav ul {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .main-nav ul li a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+        }
+    </style>
     <!-- Preloader Start -->
     <div class="loader"> <span class="loader-container"></span> </div>
     <!-- Preloader End -->
     <!-- Top Bar Start -->
+    <!-- Top Bar Start -->
     <div class="top__bar two">
         <div class="container">
             <div class="row">
-                <div class="col-xl-8 col-md-8">
+                <div class="col-xl-8 col-md-8" style="padding-left: 7rem;">
                     <div class="top__bar-left">
                         <a href="https://www.google.com/maps"> <i class="fas fa-map-marker-alt"></i> Chrisams Designs
                             Building, Kafeeero Road, Old Mulago. Kampala </a>
@@ -59,13 +171,19 @@
     </div>
     <!-- Top Bar End -->
     <!-- Header Area Start -->
+
     <div class="header__area three">
         <div class="header__sticky">
             <div class="container">
                 <div class="header__area-menubar">
                     <div class="header__area-menubar-left">
                         <div class="header__area-menubar-left-logo">
-                            <a href="index.html"><img class="dark-n" src="assets/img/logo-4.png" alt=""></a>
+                            <a href="/"><img class="dark-n" src="assets/img/logo-4.png" alt=""></a>
+                            <div class="logo-area">
+                                <a href="/">
+                                    <img src="{{ asset('web-pages/assets/images/UMA-logo.jpg') }}" alt="Logo">
+                                </a>
+                            </div>
                         </div>
                     </div>
                     <div class="header__area-menubar-center">
@@ -92,7 +210,7 @@
                                 </li>
 
                                 <li><a href="{{ route('cpd.page') }}">CPD</a></li>
-                                <li><a href="{{ url('#') }}">Events</a></li>
+                                <li><a href="{{ route('events.webAllEvents') }}">Events</a></li>
 
                                 <li><a href="{{ route('blogs.index') }}">News</a></li>
                                 <li><a href="{{ route('contact.page') }}">Contact Us</a></li>
@@ -329,6 +447,7 @@
             </div>
         </div>
     </div>
+
     <!-- Header Area End -->
 
     @yield('content')
@@ -350,7 +469,8 @@
                         <form action="{{ route('subscription.submit') }}" method="POST">
                             @csrf
                             <small class="form-text">We'll never share your email with anyone else.</small>
-                            <input type="email" class="@error('email') is-invalid @enderror" id="email" name="email" placeholder="your@email.com" value="{{ old('email') }}" required>
+                            <input type="email" class="@error('email') is-invalid @enderror" id="email"
+                                name="email" placeholder="your@email.com" value="{{ old('email') }}" required>
                             @error('email')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -359,7 +479,7 @@
                             <button type="submit"> <i class="fas fa-arrow-right"></i> </button>
                         </form>
                     </div>
-                   
+
                 </div>
                 <div class="footer__three-widget">
                     <h5>Quick Link</h5>

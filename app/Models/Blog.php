@@ -59,28 +59,29 @@ class Blog extends Model
     // Scope a query to only include published posts.
     public function scopePublished($query)
     {
-        return $query->where('status', 'published')
-                    ->whereNotNull('published_at')
-                    ->where('published_at', '<=', now());
+        return $query->where('blogs.status', 'published')
+            ->whereNotNull('blogs.published_at')
+            ->where('blogs.published_at', '<=', now());
     }
+
 
     // Scope a query to only include posts published within the last two weeks.
     public function scopeRecentlyPublished($query)
     {
         return $query->where('status', 'published')
-                    ->whereNotNull('published_at')
-                    ->where('published_at', '>=', now()->subWeeks(2))
-                    ->where('published_at', '<=', now());
+            ->whereNotNull('published_at')
+            ->where('published_at', '>=', now()->subWeeks(2))
+            ->where('published_at', '<=', now());
     }
 
     // Scope a query to only include posts that need notifications.
     public function scopeNeedsNotification($query)
     {
         return $query->where('status', 'published')
-                    ->whereNotNull('published_at')
-                    ->where('published_at', '>=', now()->subWeeks(2))
-                    ->where('published_at', '<=', now())
-                    ->where('notification_sent', false);
+            ->whereNotNull('published_at')
+            ->where('published_at', '>=', now()->subWeeks(2))
+            ->where('published_at', '<=', now())
+            ->where('notification_sent', false);
     }
 
     public function scopePosts($query)
@@ -88,9 +89,10 @@ class Blog extends Model
         return $query->where('post_type', 'post');
     }
 
+
     public function scopeEvents($query)
     {
-        return $query->where('post_type', 'event');
+        return $query->where('blogs.post_type', 'event');
     }
 
     public function getExcerpt($length = 150)

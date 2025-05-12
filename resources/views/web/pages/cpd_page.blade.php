@@ -110,7 +110,7 @@
                         <div class="sidebar-item-single sidebar-search">
                             <form action="#" method="GET">
                                 <input type="text" name="query" placeholder="Search here...">
-                                <button type="submit">Search</button>
+                                <button style="background: #2A3892" type="submit">Search</button>
                             </form>
                         </div>
                         <div class="sidebar-item-single sidebar-recent-blog">

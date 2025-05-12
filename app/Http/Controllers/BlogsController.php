@@ -29,7 +29,9 @@ class BlogsController extends Controller
     // dashbord
     public function allPosts()
     {
-        $blogs = Blog::with(['categories', 'tags', 'branch'])->latest()->paginate(10);
+        $blogs = Blog::with(['categories', 'tags', 'branch'])
+        ->where('post_type', 'Post')
+        ->latest()->paginate(10);
         return view('dashboard.posts.all_posts', compact('blogs'));
     }
 

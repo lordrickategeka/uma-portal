@@ -46,7 +46,7 @@
 
                     <li class="sidebar-item">
                         <a class="sidebar-link {{ request()->routeIs('posts.*') ? 'active' : '' }}"
-                            href="{{ route('posts.all') }}">
+                            href="{{ route('events.allEvents') }}">
                             <i class="align-middle" data-feather="codepen"></i> <span class="align-middle">Events</span>
                         </a>
                     </li>

@@ -16,15 +16,12 @@ use App\Http\Controllers\SubscriptionsController;
 use App\Http\Controllers\TransactionsController;
 use App\Http\Controllers\UserManagerController;
 use App\Http\Controllers\UserProfileController;
-use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\NewsNotificationController;
 use App\Http\Controllers\SubaccountController;
 use App\Http\Controllers\SubscribersController;
-use App\Mail\welcomeNewMemberEmail;
 use App\Models\Blog;
-use App\Models\User;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -95,6 +92,13 @@ Route::get('email/verify', function () {
     return view('auth.verify');
 })->middleware(['auth'])->name('verification.notice');
 
+// Events
+    Route::get('/events', [EventController::class,'webAllEvents'])->name('events.webAllEvents');
+    Route::get('/events/all', [EventController::class, 'getAllPostsWithTypeEvent'])->name('events.all');
+    Route::get('/events/upcoming', [EventController::class,'upcoming'])->name('events.upcoming');
+    Route::get('/events/past', [EventController::class,'past'])->name('events.past');
+    Route::get('/events/calendar', [EventController::class,' calendar'])->name('events.calendar');
+    Route::get('/events/{slug}', [EventController::class, 'showEvent'])->name('events.showEvent');
 
 
 // ==============================================================================================================
@@ -206,8 +210,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('users/{user}/edit', [UserManagerController::class, 'edit'])->name('users.edit');
     Route::put('users/{user}', [UserManagerController::class, 'update'])->name('users.update');
 
-    // events management
-    Route::resource('events', EventController::class);
+    // dashboard events management
+    Route::get('/all_events', [EventController::class,'allEvents'])->name('events.allEvents');
+    Route::get('/show_events', [EventController::class,'show'])->name('events.show');
+    Route::get('/edit_events/{id}', [EventController::class,'edit'])->name('events.edit');
+    Route::put('/update_events/{event}', [EventController::class,'update'])->name('events.update');
+    Route::delete('/delete_events/{id}', [EventController::class,'show'])->name('event.destroy');
+    
 
     // Add a custom route for publishing an event
     Route::post('events/{event}/publish', [EventController::class, 'publish'])->name('events.publish');
