@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
 {
@@ -213,5 +214,23 @@ class Event extends Model
     {
         $this->notification_sent = true;
         $this->save();
+    }
+
+    // public function getImageUrlAttribute()
+    // {
+    //     if ($this->image) {
+    //         return Storage::disk('events')->url($this->image);
+    //     }
+        
+    //     return null;
+    // }
+
+    public function getBannerImageUrlAttribute()
+    {
+        if ($this->banner_image) {
+            return Storage::disk('events')->url($this->banner_image);
+        }
+        
+        return null;
     }
 }

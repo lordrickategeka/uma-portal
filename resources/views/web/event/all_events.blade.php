@@ -64,11 +64,11 @@
                             <div class="col-md-6">
                                 <div class="blog__four-single-blog">
                                     <div class="blog__four-single-blog-img">
-                                        @if ($eventPost->event && $eventPost->event->banner_image)
-                                            <img src="{{ asset('storage/' . $eventPost->event->banner_image) }}"
+                                        @if ($eventPost->event && $eventPost->banner_image_url)
+                                            <img src="{{$eventPost->banner_image_url }}"
                                                 alt="{{ $eventPost->title }}">
                                         @else
-                                            <img src="{{ asset('storage/' . $eventPost->image) }}"
+                                            <img src="{{ $eventPost->banner_image_url}}"
                                                 alt="{{ $eventPost->title }}">
                                         @endif
                                         @if ($eventPost->event && $eventPost->event->start_date)

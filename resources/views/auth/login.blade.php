@@ -136,7 +136,9 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <button type="submit" class="btn btn-primary d-grid w-100">Sign In</button>
+                                    <button type="submit" class="btn btn-primary d-grid w-100"
+                                    style="background-color: #2A3892"
+                                    >Sign In</button>
 
                                     @if (Route::has('password.request'))
                                         <a class="btn btn-link" href="{{ route('password.request') }}">

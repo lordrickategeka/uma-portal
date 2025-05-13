@@ -10,6 +10,7 @@ use App\Models\Tag;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class BlogsController extends Controller
@@ -30,8 +31,8 @@ class BlogsController extends Controller
     public function allPosts()
     {
         $blogs = Blog::with(['categories', 'tags', 'branch'])
-        ->where('post_type', 'Post')
-        ->latest()->paginate(10);
+            ->where('post_type', 'Post')
+            ->latest()->paginate(10);
         return view('dashboard.posts.all_posts', compact('blogs'));
     }
 
@@ -91,7 +92,14 @@ class BlogsController extends Controller
 
         // Handle image upload if exists
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('news_images', 'public');
+            // Generate a unique filename
+            $filename = time() . '_' . $request->file('image')->getClientOriginalName();
+
+            // Store the file using the 'news_images' disk
+            $path = Storage::disk('news_images')->putFileAs('', $request->file('image'), $filename);
+
+            // Save the relative path
+            $data['image'] = $path;
         }
 
         // Create the blog post
@@ -134,7 +142,14 @@ class BlogsController extends Controller
 
             // Handle banner image for event if exists
             if ($request->hasFile('banner_image')) {
-                $eventData['banner_image'] = $request->file('banner_image')->store('events', 'public');
+                // Generate a unique filename
+                $filename = time() . '_' . $request->file('banner_image')->getClientOriginalName();
+
+                // Store the file using the 'events' disk
+                $path = Storage::disk('events')->putFileAs('', $request->file('banner_image'), $filename);
+
+                // Save the relative path
+                $eventData['banner_image'] = $path;
             }
 
             // Create the event and associate with the blog
@@ -194,12 +209,19 @@ class BlogsController extends Controller
 
         // Handle image upload if exists
         if ($request->hasFile('image')) {
-            // Delete old image if exists (optional)
-            if ($blog->image && file_exists(storage_path('app/public/' . $blog->image))) {
-                unlink(storage_path('app/public/' . $blog->image));
+            // Delete old image if it exists
+            if ($blog->image && Storage::disk('news_images')->exists($blog->image)) {
+                Storage::disk('news_images')->delete($blog->image);
             }
 
-            $data['image'] = $request->file('image')->store('news_images', 'public');
+            // Generate a unique filename
+            $filename = time() . '_' . $request->file('image')->getClientOriginalName();
+
+            // Store the new file
+            $path = Storage::disk('news_images')->putFileAs('', $request->file('image'), $filename);
+
+            // Update the path
+            $blog->image = $path;
         }
 
         // Update the blog post

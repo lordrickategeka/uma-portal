@@ -24,7 +24,7 @@
             <div class="col-xl-4 col-lg-6">
                 <div class="blog__one-single-blog">
                     <div class="blog__one-single-blog-image">
-                        <img src="{{ asset('storage/' . $article->image) }}" alt="{{ $article->title }}">
+                        <img src="{{$article->image_url}}" alt="{{ $article->title }}">
                     </div>
                     <div class="blog__one-single-blog-date">
                         <span>{{ \Carbon\Carbon::parse($article->published_at)->format('d M') }}</span>

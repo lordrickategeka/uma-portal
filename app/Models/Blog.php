@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Blog extends Model
@@ -89,7 +90,6 @@ class Blog extends Model
         return $query->where('post_type', 'post');
     }
 
-
     public function scopeEvents($query)
     {
         return $query->where('blogs.post_type', 'event');
@@ -98,5 +98,14 @@ class Blog extends Model
     public function getExcerpt($length = 150)
     {
         return Str::limit(strip_tags($this->content), $length);
+    }
+
+    public function getImageUrlAttribute()
+    {
+        if ($this->image) {
+            return Storage::disk('news_images')->url($this->image);
+        }
+        
+        return null;
     }
 }

@@ -178,7 +178,6 @@
                 <div class="header__area-menubar">
                     <div class="header__area-menubar-left">
                         <div class="header__area-menubar-left-logo">
-                            <a href="/"><img class="dark-n" src="assets/img/logo-4.png" alt=""></a>
                             <div class="logo-area">
                                 <a href="/">
                                     <img src="{{ asset('web-pages/assets/images/UMA-logo.jpg') }}" alt="Logo">
@@ -191,13 +190,13 @@
                             <ul id="mobilemenu">
                                 <li><a href="/">Home</a></li>
                                 <li class="menu-item-has-children">
-                                    <a href="#about-us">About us <i class="fas fa-angle-up"></i></a>
-                                    <ul class="sub-menu">
+                                    <a href="#about-us">About us</a>
+                                    {{-- <ul class="sub-menu">
                                         <li><a href="{{ url('#') }}">Our History</a></li>
                                         <li><a href="{{ url('#') }}">Our Partners</a></li>
                                         <li><a href="{{ url('#') }}">Testimonial</a></li>
                                         <li><a href="{{ url('#') }}">Portfolio</a></li>
-                                    </ul>
+                                    </ul> --}}
                                 </li>
                                 <li><a href="{{ url('https://umasacco.com/') }}" target="_blank">UMA SACCO</a></li>
 

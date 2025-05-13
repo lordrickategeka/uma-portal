@@ -39,7 +39,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
@@ -53,6 +53,45 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+        ],
+
+        'news_images' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/news_images'),
+            'url' => env('APP_URL') . '/storage/news_images',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        'events' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/events'),
+            'url' => env('APP_URL') . '/storage/events',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        'photos' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/photos'),
+            'url' => env('APP_URL') . '/storage/photos',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        'signatures' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/signatures'),
+            'url' => env('APP_URL') . '/storage/signatures',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+        'licenses' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/licenses'),
+            'url' => env('APP_URL') . '/storage/licenses',
+            'visibility' => 'public',
             'throw' => false,
         ],
 

@@ -50,7 +50,7 @@
     <nav class="site-nav">
         <div class="container">
             <div class="site-navigation">
-                {{-- <a href="#" class="logo m-0">-UMA PP - <span class="text-primary">.</span></a> --}}
+
                 <ul class="js-clone-nav d-none d-lg-inline-block text-left site-menu float-left">
                     <li class="active"><a href="/">Home</a></li>
 
@@ -107,7 +107,8 @@
         <div class="container">
             <div class="row mb-5 justify-content-center">
                 <div class="col-lg-12 text-center">
-                    <h3 class="mb-5"><span class="d-block"> Welcome to the Uganda Medical Association Payment
+                    <h3 class="mb-5" style="color: white"><span class="d-block"> Welcome to the Uganda Medical
+                            Association Payment
                             Portal</span><span class="typed-words"></span></h3>
                 </div>
             </div>

@@ -43,13 +43,21 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        // Validate input
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'content' => 'required|string', // Blog content field
             'summary' => 'nullable|string',
-            'description' => 'nullable|string',
-            'start_date' => 'nullable|date',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Main blog image
+            'category_ids' => 'required|array', // Blog categories
+            'status' => 'required|in:draft,published,archived',
+            'tags' => 'nullable|string', // Comma-separated tags
+            'branch_id' => 'required|exists:branches,id',
+
+            // Event-specific fields
+            'start_date' => 'required|date', // Make required for events
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'start_time' => 'nullable',
+            'start_time' => 'required', // Make required for events
             'end_time' => 'nullable',
             'venue_name' => 'nullable|string',
             'address' => 'nullable|string',
@@ -61,18 +69,119 @@ class EventController extends Controller
             'virtual_link' => 'nullable|url',
             'is_registration_required' => 'boolean',
             'registration_link' => 'nullable|url',
+            'max_attendees' => 'nullable|integer|min:1',
             'ticket_price' => 'nullable|numeric',
-            'ticket_currency' => 'nullable|string|max:10',
-            'banner_image' => 'nullable|string',
-            'status' => 'nullable|string',
+            'ticket_currency' => 'nullable|string|max:5',
+            'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Event banner image
+            'event_status' => 'nullable|in:draft,upcoming,ongoing,completed,cancelled',
         ]);
 
-        $data['slug'] = Str::slug($data['title']);
-        $data['created_by'] = Auth::id();
+        // Start database transaction
+        DB::beginTransaction();
 
-        Event::create($data);
+        try {
+            // First, create the blog post
+            $blog = new Blog();
+            $blog->title = $validated['title'];
+            $blog->content = $validated['content'];
+            $blog->status = $validated['status'];
+            $blog->branch_id = $validated['branch_id'];
+            $blog->author_id = Auth::id();
+            $blog->post_type = 'event'; // Mark this blog as an event
+            $blog->slug = Str::slug($validated['title']);
 
-        return redirect()->route('events.index')->with('success', 'Event created successfully.');
+            // Handle published date based on status
+            if ($validated['status'] === 'published') {
+                $blog->published_at = now();
+            }
+
+            // Handle main blog image upload if exists
+            if ($request->hasFile('image')) {
+                // Generate a unique filename
+                $filename = time() . '_' . $request->file('image')->getClientOriginalName();
+
+                // Store the file using the 'news_images' disk
+                $path = Storage::disk('news_images')->putFileAs('', $request->file('image'), $filename);
+
+                // Save the relative path
+                $blog->image = $path;
+            }
+
+            // Save the blog post
+            $blog->save();
+
+            // Now create the event record
+            $event = new Event();
+            $event->blog_id = $blog->id; // Link to the blog post
+
+            // Copy validated event fields
+            $event->start_date = $validated['start_date'];
+            $event->end_date = $validated['end_date'] ?? null;
+            $event->start_time = $validated['start_time'];
+            $event->end_time = $validated['end_time'] ?? null;
+            $event->venue_name = $validated['venue_name'] ?? null;
+            $event->address = $validated['address'] ?? null;
+            $event->city = $validated['city'] ?? null;
+            $event->country = $validated['country'] ?? null;
+            $event->location_url = $validated['location_url'] ?? null;
+            $event->is_virtual = $request->has('is_virtual');
+            $event->virtual_platform = $validated['virtual_platform'] ?? null;
+            $event->virtual_link = $validated['virtual_link'] ?? null;
+            $event->is_registration_required = $request->has('is_registration_required');
+            $event->registration_link = $validated['registration_link'] ?? null;
+            $event->max_attendees = $validated['max_attendees'] ?? null;
+            $event->ticket_price = $validated['ticket_price'] ?? null;
+            $event->ticket_currency = $validated['ticket_currency'] ?? null;
+            $event->status = $validated['event_status'] ?? 'draft';
+            $event->summary = $validated['summary'] ?? null;
+
+            // Handle banner image upload if exists
+            if ($request->hasFile('banner_image')) {
+                // Generate a unique filename
+                $filename = time() . '_' . $request->file('banner_image')->getClientOriginalName();
+
+                // Store the file using the 'events' disk
+                $path = Storage::disk('events')->putFileAs('', $request->file('banner_image'), $filename);
+
+                // Save the relative path
+                $event->banner_image = $path;
+            }
+
+            // Save the event
+            $event->save();
+
+            // Attach categories (many-to-many relationship)
+            if (isset($validated['category_ids'])) {
+                $blog->categories()->sync($validated['category_ids']);
+            }
+
+            // Handle tags
+            if (!empty($validated['tags'])) {
+                $tags = explode(',', $validated['tags']);  // Split by comma
+                $tags = array_map('trim', $tags); // Remove extra spaces
+
+                $tagIds = [];
+                foreach ($tags as $tagName) {
+                    $tag = Tag::firstOrCreate(['name' => $tagName]);
+                    $tagIds[] = $tag->id;
+                }
+
+                // Sync tags
+                $blog->tags()->sync($tagIds);
+            }
+
+            // Commit the transaction
+            DB::commit();
+
+            return redirect()->route('events.index')->with('success', 'Event created successfully.');
+        } catch (\Exception $e) {
+            // Roll back the transaction on error
+            DB::rollBack();
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error creating event: ' . $e->getMessage());
+        }
     }
 
     public function show(Event $event)
@@ -141,13 +250,19 @@ class EventController extends Controller
 
             // Handle main image upload
             if ($request->hasFile('image')) {
-                // Delete old image
-                if ($event->image) {
-                    Storage::disk('public')->delete($event->image);
+                // Delete old image if it exists
+                if ($event->image && Storage::disk('news_images')->exists($event->image)) {
+                    Storage::disk('news_images')->delete($event->image);
                 }
 
-                $imagePath = $request->file('image')->store('events', 'public');
-                $event->image = $imagePath;
+                // Generate a unique filename
+                $filename = time() . '_' . $request->file('image')->getClientOriginalName();
+
+                // Store the file using the 'news_images' disk
+                $path = Storage::disk('news_images')->putFileAs('', $request->file('image'), $filename);
+
+                // Update the path
+                $event->image = $path;
             }
 
             // Set published_at if publishing for the first time
@@ -162,13 +277,19 @@ class EventController extends Controller
 
             // Handle banner image upload
             if ($request->hasFile('event.banner_image')) {
-                // Delete old banner image
-                if ($event->event->banner_image) {
-                    Storage::disk('public')->delete($event->event->banner_image);
+                // Delete old banner image if it exists
+                if ($event->event->banner_image && Storage::disk('events')->exists($event->event->banner_image)) {
+                    Storage::disk('events')->delete($event->event->banner_image);
                 }
 
-                $bannerPath = $request->file('event.banner_image')->store('event-banners', 'public');
-                $eventData['banner_image'] = $bannerPath;
+                // Generate a unique filename
+                $filename = time() . '_' . $request->file('event.banner_image')->getClientOriginalName();
+
+                // Store the file using the 'events' disk
+                $path = Storage::disk('events')->putFileAs('', $request->file('event.banner_image'), $filename);
+
+                // Update the path
+                $eventData['banner_image'] = $path;
             }
 
             // Handle is_virtual checkbox
