@@ -27,6 +27,7 @@ class InstallmentPlan extends Model
         'amount_per_installment' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'remaining_amount' => 'decimal:2',
+        'status' => 'string',
     ];
 
     /**

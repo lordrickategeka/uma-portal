@@ -111,7 +111,7 @@
                             <li class="sidebar-item mx-5">
                                 <a class="sidebar-link {{ request()->routeIs('members.inactive') ? 'active' : '' }}" href="{{ route('members.inactive') }}">
                                     <i class="align-middle" data-feather="users"></i>
-                                    Pending/Inactive
+                                    Inactive
                                 </a>
                             </li>
                             

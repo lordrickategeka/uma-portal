@@ -80,7 +80,7 @@ Route::get('/payments/error', function () {
 Route::get('/payments/callback', [FlutterPaymentController::class, 'handleCallback'])->name('flutterwave.callback');
 Route::get('/payments/verify/{reference}', [FlutterPaymentController::class, 'verifyTransaction'])->name('payments.verify');
 Route::post('/flutterwave/webhook', [FlutterPaymentController::class, 'handleWebhook']);
-
+Route::get('/payments/cancelled/{reference}', [FlutterPaymentController::class, 'showCancelledPayment'])->name('payments.cancelled');
 
 
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
@@ -178,6 +178,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::match(['get', 'post'], '/payments/initialize', [FlutterPaymentController::class, 'initializePaymentFlutter'])->name('payments.initialize');
     Route::get('/payments/continue/{transaction_id}', [FlutterPaymentController::class, 'continuePayment'])
         ->name('payments.continue');
+    Route::get('/payments/retry/{transaction_id}', [FlutterPaymentController::class, 'retryPayment'])->name('payments.retry');
+    
 
     // creating sub-accounts on flutterwave
     Route::post('/subaccounts/create', [SubaccountController::class, 'createSubaccount']);

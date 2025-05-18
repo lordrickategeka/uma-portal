@@ -36,7 +36,7 @@ class FlutterPaymentController extends Controller
         // Set callback URL based on environment
         $this->callbackUrl = app()->environment('production')
             ? config('app.url') . '/payments/callback'
-            : env('FLUTTERWAVE_TEST_CALLBACK_URL', 'https://2c7f-102-134-149-88.ngrok-free.app/payments/callback');
+            : env('FLUTTERWAVE_TEST_CALLBACK_URL');
     }
 
     public function initializePaymentFlutter(Request $request)
@@ -519,59 +519,191 @@ class FlutterPaymentController extends Controller
         }
     }
 
-    public function handleCallback(Request $request)
-    {
-        Log::info('Flutterwave Callback Received:', $request->all());
+   public function handleCallback(Request $request)
+{
+    Log::info('Flutterwave Callback Received:', $request->all());
 
-        $status = $request->input('status');
-        $txRef = $request->input('tx_ref');
-        $transactionId = $request->input('transaction_id');
+    $status = $request->input('status');
+    $txRef = $request->input('tx_ref');
+    $transactionId = $request->input('transaction_id');
 
-        if (!$txRef) {
-            Log::error("Flutterwave callback missing tx_ref");
-            return redirect()->route('payments.error')->with('error', 'Invalid payment reference');
-        }
-
-        // Find the local transaction
-        $transaction = Transaction::where('reference', $txRef)->first();
-
-        if (!$transaction) {
-            Log::error("Transaction not found for reference: {$txRef}");
-            return redirect()->route('payments.error')->with('error', 'Transaction not found');
-        }
-
-        // If the transaction is already processed, redirect accordingly
-        if ($transaction->status === 'paid') {
-            return redirect()->route('payments.success', ['reference' => $txRef]);
-        }
-
-        if ($transaction->status === 'failed') {
-            return redirect()->route('payments.failed', ['reference' => $txRef]);
-        }
-
-        // Verify the transaction with Flutterwave
-        try {
-            $verification = $this->verifyTransaction($txRef);
-
-            if ($verification['verified']) {
-                // Transaction verified as successful
-                return redirect()->route('payments.success', ['reference' => $txRef]);
-            } else {
-                // Payment failed or is pending
-                $failureReason = $verification['message'] ?? 'Payment verification failed';
-                return redirect()->route('payments.failed', [
-                    'reference' => $txRef,
-                    'reason' => $failureReason
-                ]);
-            }
-        } catch (\Exception $e) {
-            Log::error('Exception in callback: ' . $e->getMessage());
-
-            return redirect()->route('payments.error', [
-                'reference' => $txRef
-            ])->with('error', 'An error occurred while processing your payment');
-        }
+    if (!$txRef) {
+        Log::error("Flutterwave callback missing tx_ref");
+        return redirect()->route('payments.error')->with('error', 'Invalid payment reference');
     }
+
+    // Find the local transaction
+    $transaction = Transaction::where('reference', $txRef)->first();
+
+    if (!$transaction) {
+        Log::error("Transaction not found for reference: {$txRef}");
+        return redirect()->route('payments.error')->with('error', 'Transaction not found');
+    }
+
+    // If the transaction is already processed, redirect accordingly
+    if ($transaction->status === 'paid') {
+        return redirect()->route('payments.success', ['reference' => $txRef]);
+    }
+
+    if ($transaction->status === 'failed') {
+        return redirect()->route('payments.failed', ['reference' => $txRef]);
+    }
+
+    if ($transaction->status === 'cancelled') {
+        return redirect()->route('payments.cancelled', ['reference' => $txRef]);
+    }
+
+    // Handle canceled status explicitly
+    if ($status === 'cancelled') {
+        DB::transaction(function () use ($transaction) {
+            // Update transaction status to cancelled
+            $transaction->status = 'cancelled';
+            $transaction->save();
+            
+            // If this is part of an installment plan, update the plan status
+            if ($transaction->installment_plan_id) {
+                $installmentPlan = InstallmentPlan::find($transaction->installment_plan_id);
+                
+                if ($installmentPlan) {
+                    // Only cancel the installment plan if this is the first payment and no other payments have been made
+                    if ($installmentPlan->paid_installments == 0 && $transaction->installment_number == 1) {
+                        $installmentPlan->status = 'cancelled';
+                        $installmentPlan->save();
+                        
+                        Log::info("Installment plan {$installmentPlan->id} marked as cancelled due to cancelled transaction {$transaction->id}");
+                    } else {
+                        Log::info("Not cancelling installment plan {$installmentPlan->id} as it already has {$installmentPlan->paid_installments} paid installments");
+                    }
+                }
+            }
+        });
+        
+        Log::info("Transaction {$transaction->id} marked as cancelled by user");
+        
+        // Redirect to a cancelled payment page with option to retry
+        return redirect()->route('payments.cancelled', ['reference' => $txRef]);
+    }
+
+    // For other statuses, verify the transaction with Flutterwave
+    try {
+        $verification = $this->verifyTransaction($txRef);
+
+        if ($verification['verified']) {
+            // Transaction verified as successful
+            return redirect()->route('payments.success', ['reference' => $txRef]);
+        } else {
+            // Payment failed or is pending
+            $failureReason = $verification['message'] ?? 'Payment verification failed';
+            
+            // If the transaction wasn't already updated (e.g., in verifyTransaction),
+            // update it now as failed
+            if ($transaction->status === 'pending') {
+                $transaction->status = 'failed';
+                $transaction->save();
+                
+                Log::info("Transaction {$transaction->id} marked as failed after verification");
+            }
+            
+            return redirect()->route('payments.failed', [
+                'reference' => $txRef,
+                'reason' => $failureReason
+            ]);
+        }
+    } catch (\Exception $e) {
+        Log::error('Exception in callback: ' . $e->getMessage());
+        Log::error('Exception trace: ' . $e->getTraceAsString());
+
+        // Mark transaction as error if it's still pending
+        if ($transaction->status === 'pending') {
+            $transaction->status = 'error';
+            $transaction->save();
+            
+            Log::info("Transaction {$transaction->id} marked as error due to exception");
+        }
+
+        return redirect()->route('payments.error', [
+            'reference' => $txRef
+        ])->with('error', 'An error occurred while processing your payment');
+    }
+}
+
+public function handleWebhook(Request $request)
+{
+    // Validate Flutterwave signature for security
+    $signature = $request->header('verif-hash');
+    $secretHash = env('FLW_SECRET_HASH');
+
+    if (!$signature || ($secretHash && $signature !== $secretHash)) {
+        Log::warning('Invalid webhook signature');
+        return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 401);
+    }
+
+    Log::info('Flutterwave webhook received:', $request->all());
+
+    try {
+        // Process the webhook data
+        $event = $request->input('event');
+        $data = $request->input('data');
+
+        if ($event === 'charge.completed' && isset($data['tx_ref'])) {
+            $txRef = $data['tx_ref'];
+            $transaction = Transaction::where('reference', $txRef)->first();
+
+            if ($transaction && $transaction->status === 'pending') {
+                $status = $data['status'] ?? '';
+
+                if ($status === 'successful') {
+                    // Update transaction as paid
+                    $transaction->status = 'paid';
+                    $transaction->payment_method = $data['payment_type'] ?? 'Unknown';
+                    $transaction->payment_data = json_encode($data);
+                    $transaction->save();
+
+                    // Process the successful payment
+                    $this->processSuccessfulPayment($transaction);
+
+                    Log::info("Webhook: Transaction {$transaction->id} marked as paid");
+                } elseif ($status === 'failed') {
+                    // Mark as failed
+                    $transaction->status = 'failed';
+                    $transaction->payment_data = json_encode($data);
+                    $transaction->save();
+
+                    Log::info("Webhook: Transaction {$transaction->id} marked as failed");
+                } elseif ($status === 'cancelled') {
+                    DB::transaction(function () use ($transaction, $data) {
+                        // Mark as cancelled
+                        $transaction->status = 'cancelled';
+                        $transaction->payment_data = json_encode($data);
+                        $transaction->save();
+                        
+                        // If this is part of an installment plan, update the plan status if necessary
+                        if ($transaction->installment_plan_id) {
+                            $installmentPlan = InstallmentPlan::find($transaction->installment_plan_id);
+                            
+                            if ($installmentPlan) {
+                                // Only cancel the installment plan if this is the first payment and no other payments have been made
+                                if ($installmentPlan->paid_installments == 0 && $transaction->installment_number == 1) {
+                                    $installmentPlan->status = 'cancelled';
+                                    $installmentPlan->save();
+                                    
+                                    Log::info("Webhook: Installment plan {$installmentPlan->id} marked as cancelled due to cancelled transaction {$transaction->id}");
+                                }
+                            }
+                        }
+                    });
+
+                    Log::info("Webhook: Transaction {$transaction->id} marked as cancelled");
+                }
+            }
+        }
+
+        return response()->json(['status' => 'success']);
+    } catch (\Exception $e) {
+        Log::error('Error processing webhook: ' . $e->getMessage());
+        return response()->json(['status' => 'error', 'message' => 'Server error'], 500);
+    }
+}
 
     protected function updateTransactionWithPaymentLink($transaction, $paymentLink)
     {
@@ -602,61 +734,111 @@ class FlutterPaymentController extends Controller
         }
     }
 
-
-    public function retryPayment($transaction_id)
-    {
-        $transaction = Transaction::findOrFail($transaction_id);
-        $user = Auth::user();
-
-        // Ensure this user owns this transaction
-        if ($transaction->user_id !== $user->id) {
-            return redirect()->back()->with('error', 'Unauthorized access');
-        }
-
-        // Get the plan and installment information
-        $plan = $transaction->plan;
-        $installmentPlanId = $transaction->installment_plan_id;
-        $installmentNumber = $transaction->installment_number;
-
-        // Calculate the correct amount for this payment
-        $amount = $transaction->amount;
-
-        // If this is an installment, recalculate the amount from the installment plan
-        if ($installmentPlanId) {
-            $installmentPlan = InstallmentPlan::findOrFail($installmentPlanId);
-
-            // If this is the last installment, use the exact remaining amount
-            if ($installmentNumber == $installmentPlan->total_installments) {
-                $amount = $installmentPlan->remaining_amount;
-            } else {
-                $amount = $installmentPlan->amount_per_installment;
-            }
-        }
-
-        // Create a new transaction for the retry
-        $reference = 'RETRY-' . time() . '-' . $user->id;
-
-        $newTransaction = Transaction::create([
-            'reference' => $reference,
-            'amount' => $amount,
-            'email' => $user->email,
-            'name' => $user->name,
-            'phone' => $user->profile->phone ?? '',
-            'status' => 'pending',
-            'user_id' => $user->id,
-            'plan_id' => $transaction->plan_id,
-            'installment_plan_id' => $installmentPlanId,
-            'installment_number' => $installmentNumber
-        ]);
-
-        // Generate Flutterwave payment link
-        $paymentLink = $this->generateFlutterwaveLink($newTransaction);
-
-        $newTransaction->payment_link = $paymentLink;
-        $newTransaction->save();
-
-        return redirect()->to($paymentLink);
+   public function retryPayment($transaction_id)
+{
+     // First check if user is authenticated
+    if (!Auth::check()) {
+        return redirect()->route('login')
+            ->with('error', 'You must be logged in to retry a payment');
     }
+
+    $user = Auth::user();
+    $transaction = Transaction::findOrFail($transaction_id);
+
+    // Ensure this user owns this transaction
+     try {
+        $transaction = Transaction::findOrFail($transaction_id);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return redirect()->route('dashboard')
+            ->with('error', 'Transaction not found');
+    }
+
+    if ($transaction->user_id !== $user->id) {
+        return redirect()->back()->with('error', 'Unauthorized access');
+    }
+
+    // Allow retrying only cancelled or failed transactions
+    if (!in_array($transaction->status, ['cancelled', 'failed', 'abandoned'])) {
+        return redirect()->back()->with('error', 'This transaction cannot be retried');
+    }
+
+    // Get the plan and installment information
+    $plan = $transaction->plan;
+    $installmentPlanId = $transaction->installment_plan_id;
+    $installmentNumber = $transaction->installment_number;
+
+    // Calculate the correct amount for this payment
+    $amount = $transaction->amount;
+
+    // If this is an installment, recalculate the amount from the installment plan
+    if ($installmentPlanId) {
+        $installmentPlan = InstallmentPlan::findOrFail($installmentPlanId);
+
+        // If this is the last installment, use the exact remaining amount
+        if ($installmentNumber == $installmentPlan->total_installments) {
+            $amount = $installmentPlan->remaining_amount;
+        } else {
+            $amount = $installmentPlan->amount_per_installment;
+        }
+    }
+
+    // Create a new transaction for the retry
+    $reference = 'RETRY-' . time() . '-' . $user->id;
+
+    $newTransaction = Transaction::create([
+        'reference' => $reference,
+        'amount' => $amount,
+        'email' => $user->email,
+        'name' => $user->name,
+        'phone' => $user->profile->phone ?? '',
+        'status' => 'pending',
+        'user_id' => $user->id,
+        'plan_id' => $transaction->plan_id,
+        'installment_plan_id' => $installmentPlanId,
+        'installment_number' => $installmentNumber,
+        'retry_of' => $transaction->id, // Optional: track which transaction this is retrying
+    ]);
+
+    Log::info("Created retry transaction {$newTransaction->id} for cancelled transaction {$transaction->id}");
+
+    // Generate payment payload
+    $payload = $this->buildPaymentPayload($newTransaction, $user, $plan, $installmentPlanId, $installmentNumber);
+
+    // Make API request to Flutterwave
+    try {
+        Log::info('Retry payment payload:', $payload);
+
+        $response = Http::timeout(40)
+            ->withoutVerifying()
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $this->secretKey,
+                'Content-Type' => 'application/json',
+            ])
+            ->post($this->baseUrl . '/payments', $payload);
+
+        $responseData = $response->json();
+
+        Log::info('Flutterwave retry payment response:', $responseData);
+
+        if ($response->successful() && isset($responseData['status']) && $responseData['status'] === 'success') {
+            // Update transaction with payment link
+            $newTransaction->payment_link = $responseData['data']['link'];
+            $newTransaction->save();
+
+            Log::info("Generated payment link for retry transaction {$newTransaction->id}: {$responseData['data']['link']}");
+
+            return redirect()->away($responseData['data']['link']);
+        }
+
+        // If we get here, something went wrong with the Flutterwave API call
+        Log::error('Failed to generate payment link for retry:', $responseData);
+
+        return redirect()->back()->with('error', $responseData['message'] ?? 'Failed to generate payment link. Please try again.');
+    } catch (\Exception $e) {
+        Log::error('Exception while retrying payment: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'An error occurred while processing your payment. Please try again later.');
+    }
+}
 
     public function index()
     {
@@ -664,12 +846,10 @@ class FlutterPaymentController extends Controller
         return view('pay.index', compact('payments'));
     }
 
-
     protected function generateReference()
     {
         return 'FLW-' . time() . '-' . Str::random(8);
     }
-
 
     public function submitForm()
     {
@@ -704,74 +884,94 @@ class FlutterPaymentController extends Controller
         });
     }
 
-    /**
-     * Process installment payment
-     */
-    private function processInstallmentPayment(Transaction $transaction)
-    {
-        $installmentPlan = InstallmentPlan::find($transaction->installment_plan_id);
-        $user = $transaction->user;
-        $plan = $transaction->plan;
+    
+   /**
+ * Process installment payment
+ */
+private function processInstallmentPayment(Transaction $transaction)
+{
+    // Skip processing if transaction is not paid
+    if ($transaction->status !== 'paid') {
+        Log::info("Skipping installment processing for non-paid transaction {$transaction->id} with status {$transaction->status}");
+        return;
+    }
 
-        if (!$installmentPlan) {
-            Log::error("Installment plan {$transaction->installment_plan_id} not found.");
-            throw new \Exception("Installment plan not found");
-        }
+    $installmentPlan = InstallmentPlan::find($transaction->installment_plan_id);
+    $user = $transaction->user;
+    $plan = $transaction->plan;
 
-        $installmentNumber = $transaction->installment_number ?? $installmentPlan->paid_installments + 1;
+    if (!$installmentPlan) {
+        Log::error("Installment plan {$transaction->installment_plan_id} not found for transaction {$transaction->id}");
+        throw new \Exception("Installment plan not found");
+    }
 
-        // Link this transaction to the installment plan using the pivot table
+    $installmentNumber = $transaction->installment_number ?? ($installmentPlan->paid_installments + 1);
+
+    Log::info("Processing installment payment for transaction {$transaction->id}, installment plan {$installmentPlan->id}, installment number {$installmentNumber}");
+
+    // Link this transaction to the installment plan using the pivot table
+    if (!$transaction->installmentPlans()->where('installment_plan_id', $installmentPlan->id)->exists()) {
         $installmentPlan->transactions()->attach($transaction->id, [
             'installment_number' => $installmentNumber,
             'applied_amount' => $transaction->amount
         ]);
-
-        // Update the installment plan stats
-        $installmentPlan->updatePaymentStats();
-
-        // If all installments are paid
-        if ($installmentPlan->status === 'completed') {
-            // Activate the user's subscription
-            $isLifeMembership = $plan->membershipCategory->name === 'life' ||
-                strtolower($plan->name) === 'life membership';
-
-            DB::table('user_plans')->updateOrInsert(
-                ['user_id' => $user->id],
-                [
-                    'plan_id' => $plan->id,
-                    'subscribed_at' => now(),
-                    'expires_at' => $isLifeMembership ? now()->addYears(20) : now()->addYear(),
-                    'updated_at' => now()
-                ]
-            );
-
-            // Send email for completed subscription
-            Mail::to($user->email)->send(new SubscriptionActivatedMail(
-                $user,
-                $plan,
-                $transaction->reference,
-                $transaction->payment_method ?? 'Unknown'
-            ));
-
-            Log::info("Membership activated for user {$user->id}, plan {$plan->id}");
-        } else {
-            // Set the next payment date (30 days from now)
-            $installmentPlan->next_payment_date = now()->addDays(30);
-            $installmentPlan->save();
-
-            // Send email for installment payment
-            Mail::to($user->email)->send(new InstallmentPaymentMail(
-                $user,
-                $plan,
-                $transaction->reference,
-                $transaction->payment_method ?? 'Unknown',
-                $installmentPlan,
-                $installmentNumber
-            ));
-
-            Log::info("Installment {$installmentNumber} paid for user {$user->id}, plan {$plan->id}. Remaining: {$installmentPlan->remaining_amount}");
-        }
     }
+
+    // Recalculate paid stats
+    $allTransactions = $installmentPlan->transactions()->where('status', 'paid')->get();
+    $totalPaid = $allTransactions->sum('pivot.applied_amount');
+    $paidInstallments = $allTransactions->count();
+
+    $installmentPlan->paid_installments = $paidInstallments;
+    $installmentPlan->amount_paid = $totalPaid;
+    $installmentPlan->remaining_amount = $installmentPlan->total_amount - $totalPaid;
+
+    // Determine plan status
+    if ($paidInstallments >= $installmentPlan->total_installments || $installmentPlan->remaining_amount <= 0) {
+        $installmentPlan->status = 'completed';
+        Log::info("Installment plan {$installmentPlan->id} marked as completed");
+    } else {
+        $installmentPlan->status = 'active';
+        $installmentPlan->next_payment_date = now()->addDays(30);
+        Log::info("Installment plan {$installmentPlan->id} active, next payment: {$installmentPlan->next_payment_date}");
+    }
+
+    $installmentPlan->save();
+
+    if ($installmentPlan->status === 'completed') {
+        $currentDate = now()->format('Y-m-d H:i:s');
+        $expiryDate = $plan->membershipCategory->name === 'life' ? null : now()->addYear()->format('Y-m-d H:i:s');
+
+        DB::table('user_plans')->updateOrInsert(
+            ['user_id' => $user->id, 'plan_id' => $plan->id],
+            [
+                'subscribed_at' => $currentDate,
+                'expires_at' => $expiryDate,
+                'updated_at' => $currentDate
+            ]
+        );
+
+        Mail::to($user->email)->send(new SubscriptionActivatedMail(
+            $user,
+            $plan,
+            $transaction->reference,
+            $transaction->payment_method ?? 'Unknown'
+        ));
+
+        Log::info("Life membership activated for user {$user->id}, plan {$plan->id}, expires: {$expiryDate}");
+    } else {
+        Mail::to($user->email)->send(new InstallmentPaymentMail(
+            $user,
+            $plan,
+            $transaction->reference,
+            $transaction->payment_method ?? 'Unknown',
+            $installmentPlan,
+            $installmentNumber
+        ));
+
+        Log::info("Installment {$installmentNumber} paid for user {$user->id}, plan {$plan->id}. Remaining: {$installmentPlan->remaining_amount}");
+    }
+}
 
     /**
      * Process full payment
@@ -802,57 +1002,23 @@ class FlutterPaymentController extends Controller
         Log::info("Subscription activated for user {$user->id}, plan {$plan->id}");
     }
 
-    public function handleWebhook(Request $request)
-    {
-        // Validate Flutterwave signature for security
-        $signature = $request->header('verif-hash');
-        $secretHash = env('FLW_SECRET_HASH');
 
-        if (!$signature || ($secretHash && $signature !== $secretHash)) {
-            Log::warning('Invalid webhook signature');
-            return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 401);
-        }
-
-        Log::info('Flutterwave webhook received:', $request->all());
-
-        try {
-            // Process the webhook data
-            $event = $request->input('event');
-            $data = $request->input('data');
-
-            if ($event === 'charge.completed' && isset($data['tx_ref'])) {
-                $txRef = $data['tx_ref'];
-                $transaction = Transaction::where('reference', $txRef)->first();
-
-                if ($transaction && $transaction->status !== 'paid') {
-                    $status = $data['status'] ?? '';
-
-                    if ($status === 'successful') {
-                        // Update transaction as paid
-                        $transaction->status = 'paid';
-                        $transaction->payment_method = $data['payment_type'] ?? 'Unknown';
-                        $transaction->payment_data = json_encode($data);
-                        $transaction->save();
-
-                        // Process the successful payment
-                        $this->processSuccessfulPayment($transaction);
-
-                        Log::info("Webhook: Transaction {$transaction->id} marked as paid");
-                    } elseif (in_array($status, ['failed', 'cancelled'])) {
-                        // Mark as failed
-                        $transaction->status = 'failed';
-                        $transaction->payment_data = json_encode($data);
-                        $transaction->save();
-
-                        Log::info("Webhook: Transaction {$transaction->id} marked as failed");
-                    }
-                }
-            }
-
-            return response()->json(['status' => 'success']);
-        } catch (\Exception $e) {
-            Log::error('Error processing webhook: ' . $e->getMessage());
-            return response()->json(['status' => 'error', 'message' => 'Server error'], 500);
-        }
+    public function showCancelledPayment(Request $request, $reference)
+{
+    $transaction = Transaction::where('reference', $reference)->first();
+    
+    if (!$transaction) {
+        return redirect()->route('dashboard')->with('error', 'Transaction not found');
     }
+    
+    // Get plan and installment details for display
+    $plan = $transaction->plan;
+    $installmentPlan = null;
+    
+    if ($transaction->installment_plan_id) {
+        $installmentPlan = InstallmentPlan::find($transaction->installment_plan_id);
+    }
+    
+    return view('payments.cancelled', compact('transaction', 'plan', 'installmentPlan'));
+}
 }
