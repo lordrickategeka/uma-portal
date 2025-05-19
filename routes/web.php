@@ -212,6 +212,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('users/{user}/edit', [UserManagerController::class, 'edit'])->name('users.edit');
     Route::put('users/{user}', [UserManagerController::class, 'update'])->name('users.update');
 
+    // import users
+    Route::get('/users/import', [UserManagerController::class, 'showImportForm'])->name('users.import-form');
+    Route::post('/users/import', [UserManagerController::class, 'import'])->name('users.import');
+    Route::get('/users/download-template', [UserManagerController::class, 'downloadTemplate'])->name('users.download-template');
+
+
     // dashboard events management
     Route::get('/all_events', [EventController::class,'allEvents'])->name('events.allEvents');
     Route::get('/show_events', [EventController::class,'show'])->name('events.show');

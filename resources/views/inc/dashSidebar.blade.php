@@ -178,6 +178,13 @@
                             <i class="align-middle" data-feather="grid"></i> <span class="align-middle">Permissions</span>
                         </a>
                     </li>
+
+                    <li class="sidebar-item">
+                        <a class="sidebar-link {{ request()->routeIs('users.import-form.*') ? 'active' : '' }}"
+                            href="{{ route('users.import-form') }}">
+                            <i class="align-middle" data-feather="grid"></i> <span class="align-middle">Import Users</span>
+                        </a>
+                    </li>
                 @endrole
 
                 <li class="sidebar-item">
